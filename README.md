@@ -39,7 +39,7 @@ bun run dev    # local dev server
 bun run build  # compile the core to WebAssembly, copy it and the reference recording into web/public/, build the Astro site
 ```
 
-Deployment runs on push to the `release` branch: GitHub Actions runs `wrangler deploy`, which needs the repo secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. To deploy locally instead, run `bun run deploy` with `wrangler` logged in.
+To deploy to Cloudflare (Workers static assets), run `bun run deploy` from `web/`. It builds the site and runs `wrangler deploy` using your `wrangler login` session.
 
 ## Approach
 
