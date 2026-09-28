@@ -1,0 +1,10 @@
+[package]
+name = "hold-my-banjo"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+hold-my-banjo-core = { path = "../core" }
+cpal = "0.15.3"
+hound = "3.5.1"
+clap = { version = "4.5.20", features = ["derive"] }

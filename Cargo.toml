@@ -1,13 +1,7 @@
-[package]
-name = "hold-my-banjo"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+members = ["crates/core", "crates/cli", "crates/wasm"]
+default-members = ["crates/core", "crates/cli"]
+resolver = "2"
 
-[dependencies]
-cpal = "0.15.3"
-hound = "3.5.1"
-clap = { version = "4.5.20", features = ["derive"] }
-serde = { version = "1.0.210", features = ["derive"] }
-toml = "0.8.19"
-rand = "0.8.5"
-rand_chacha = "0.3.1"
+[profile.release]
+lto = true

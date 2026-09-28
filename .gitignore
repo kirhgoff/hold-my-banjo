@@ -1,2 +1,8 @@
 /target
 /out
+/web/dist
+/web/node_modules
+/web/.astro
+/web/.wrangler
+/web/public/chorus.wasm
+/web/public/banjo-frogs-long.m4a

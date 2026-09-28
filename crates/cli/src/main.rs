@@ -1,7 +1,5 @@
-mod mix;
-mod sim;
-
 use clap::{Args, Parser, Subcommand};
+use hold_my_banjo_core::{mix, sim};
 use sim::{CallEvent, Mode, Scenario};
 use std::collections::BTreeMap;
 use std::error::Error;
@@ -38,7 +36,7 @@ struct RunArgs {
     seed: Option<u64>,
     #[arg(long)]
     duration: Option<f64>,
-    #[arg(long, value_enum)]
+    #[arg(long)]
     mode: Option<Mode>,
     #[arg(long)]
     strength: Option<f64>,
@@ -79,7 +77,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn load(args: &RunArgs) -> Result<Scenario, Box<dyn Error>> {
     let text = std::fs::read_to_string(&args.scenario)?;
-    let mut s: Scenario = toml::from_str(&text)?;
+    let mut s = Scenario::parse(&text)?;
 
     if let Some(v) = args.frogs {
         s.frog_count = v;
@@ -162,6 +160,59 @@ fn write_csv(s: &Scenario, clip_source: &str, events: &[CallEvent], log_events: 
     Ok(())
 }
 
+fn load_clips(dir: &Path, sr: u32) -> Result<(Vec<Vec<f32>>, &'static str), String> {
+    let mut paths: Vec<PathBuf> = match std::fs::read_dir(dir) {
+        Ok(rd) => rd
+            .filter_map(|e| e.ok())
+            .map(|e| e.path())
+            .filter(|p| p.extension().map(|ext| ext.eq_ignore_ascii_case("wav")).unwrap_or(false))
+            .collect(),
+        Err(_) => Vec::new(),
+    };
+
+    if paths.is_empty() {
+        return Ok((mix::synth_bonks(sr), "synthetic_placeholder"));
+    }
+    paths.sort();
+
+    let mut clips = Vec::with_capacity(paths.len());
+    for path in &paths {
+        let mut reader = hound::WavReader::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
+        let spec = reader.spec();
+        let channels = spec.channels as usize;
+
+        let samples: Vec<f32> = match spec.sample_format {
+            hound::SampleFormat::Float => reader
+                .samples::<f32>()
+                .collect::<Result<Vec<f32>, _>>()
+                .map_err(|e| format!("{}: {e}", path.display()))?,
+            hound::SampleFormat::Int => {
+                let scale = (1i64 << (spec.bits_per_sample - 1)) as f32;
+                reader
+                    .samples::<i32>()
+                    .collect::<Result<Vec<i32>, _>>()
+                    .map_err(|e| format!("{}: {e}", path.display()))?
+                    .into_iter()
+                    .map(|s| s as f32 / scale)
+                    .collect()
+            }
+        };
+
+        let mono: Vec<f32> = if channels <= 1 {
+            samples
+        } else {
+            samples
+                .chunks(channels)
+                .map(|c| c.iter().sum::<f32>() / channels as f32)
+                .collect()
+        };
+
+        clips.push(mix::prepare(mono, spec.sample_rate, sr));
+    }
+
+    Ok((clips, "wav"))
+}
+
 fn play(s: Scenario, log_events: bool) -> Result<(), Box<dyn Error>> {
     use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
@@ -182,15 +233,17 @@ fn play(s: Scenario, log_events: bool) -> Result<(), Box<dyn Error>> {
         );
     }
 
-    let (clips, clip_source) = mix::load_clips(&s.audio.asset_dir, sr)?;
+    let (clips, clip_source) = load_clips(&s.audio.asset_dir, sr)?;
     banner(&s, clip_source);
 
     let events = sim::simulate(&s, clips.len());
     write_csv(&s, clip_source, &events, log_events)?;
 
-    let trigs = mix::triggers(&events, &s, sr);
     let max_clip_len = clips.iter().map(|c| c.len()).max().unwrap_or(0);
-    let mut mixer = mix::Mixer::new(clips, trigs, s.audio.master_gain);
+    let mut mixer = mix::Mixer::new(clips, s.audio.master_gain);
+    for e in &events {
+        mixer.push(mix::trigger(e, &s, sr));
+    }
 
     let stream = device.build_output_stream(
         &config,
@@ -208,16 +261,18 @@ fn play(s: Scenario, log_events: bool) -> Result<(), Box<dyn Error>> {
 
 fn render(s: Scenario, log_events: bool) -> Result<(), Box<dyn Error>> {
     let sr = s.audio.preferred_sample_rate;
-    let (clips, clip_source) = mix::load_clips(&s.audio.asset_dir, sr)?;
+    let (clips, clip_source) = load_clips(&s.audio.asset_dir, sr)?;
     banner(&s, clip_source);
 
     let events = sim::simulate(&s, clips.len());
     write_csv(&s, clip_source, &events, log_events)?;
 
-    let trigs = mix::triggers(&events, &s, sr);
     let max_clip_len = clips.iter().map(|c| c.len()).max().unwrap_or(0);
     let frames = (s.duration_s * sr as f64) as usize + 2 * max_clip_len;
-    let mut mixer = mix::Mixer::new(clips, trigs, s.audio.master_gain);
+    let mut mixer = mix::Mixer::new(clips, s.audio.master_gain);
+    for e in &events {
+        mixer.push(mix::trigger(e, &s, sr));
+    }
     let samples = mix::render_offline(&mut mixer, frames, 1024);
 
     let wav_path = s.output.offline_wav.clone().ok_or("no output.offline_wav configured and no --wav given")?;
