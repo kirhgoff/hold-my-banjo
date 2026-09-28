@@ -1,74 +1,283 @@
 :root {
   color-scheme: dark;
-  --bg: #0f1512;
-  --surface: #18221c;
-  --text: #d6e4d0;
-  --muted: #7a9e7e;
+  --bg: #0c1210;
+  --surface: #151f19;
+  --surface-2: #1b2820;
+  --text: #dbe7d3;
+  --muted: #92ad90;
   --accent: #e0b84a;
+  --accent-hover: #f0cb61;
+  --moss: #7fb069;
+  --moss-deep: #4f7d43;
+  --moss-soft: rgba(127, 176, 105, 0.28);
+  --track: rgba(127, 176, 105, 0.2);
   --border: rgba(255, 255, 255, 0.08);
-  --font: system-ui, sans-serif;
-  --mono: ui-monospace, monospace;
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --radius: 0.75rem;
+  --display: 'Fraunces', Georgia, serif;
+  --font: 'Instrument Sans', system-ui, sans-serif;
+  --mono: 'DM Mono', ui-monospace, monospace;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.5;
   max-width: 60rem;
   margin: 0 auto;
   padding: 1rem;
 }
 
-h1 {
-  margin-bottom: 0.25rem;
+h1,
+h2 {
+  font-family: var(--display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin: 0;
+}
+
+h2 {
+  font-size: 1.6rem;
 }
 
 p {
   color: var(--muted);
-  line-height: 1.5;
+  margin: 0;
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: 0.15em;
+}
+
+a:hover {
+  color: var(--accent-hover);
+}
+
+fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 1rem 1.25rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+legend {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--moss);
+  padding: 0.2rem 0.7rem;
+  margin-left: -0.35rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
 }
 
 label {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 0.5rem;
+  column-gap: 0.75rem;
+  row-gap: 0.35rem;
   font-size: 0.9rem;
+  font-weight: 500;
+}
+
+label > input,
+label > select {
+  grid-column: 1 / -1;
 }
 
 output {
   font-family: var(--mono);
+  font-size: 0.85rem;
   color: var(--accent);
-  min-width: 3ch;
+  font-variant-numeric: tabular-nums;
   text-align: right;
+}
+
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 1.25rem;
+  margin: 0;
+  background: transparent;
+  accent-color: var(--moss);
+  cursor: pointer;
+}
+
+input[type='range']:focus {
+  outline: none;
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--track);
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--moss);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--moss-deep);
+  transition: box-shadow 0.15s;
+}
+
+input[type='range']::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--track);
+}
+
+input[type='range']::-moz-range-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--moss);
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--moss);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--moss-deep);
+  transition: box-shadow 0.15s;
+}
+
+input[type='range']:hover::-webkit-slider-thumb,
+input[type='range']:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 1px var(--moss-deep), 0 0 0 5px var(--moss-soft);
+}
+
+input[type='range']:hover::-moz-range-thumb,
+input[type='range']:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 1px var(--moss-deep), 0 0 0 5px var(--moss-soft);
+}
+
+select,
+input[type='number'] {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.7rem;
+  width: 100%;
+  min-height: 2.4rem;
+}
+
+input[type='number'] {
+  font-family: var(--mono);
+}
+
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 2.2rem;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path d='M1 1.5l5 5 5-5' fill='none' stroke='%237fb069' stroke-width='1.8' stroke-linecap='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 0.7rem;
+}
+
+select:hover,
+input[type='number']:hover {
+  border-color: var(--moss-deep);
 }
 
 button {
   font: inherit;
-  background: var(--surface);
+  font-weight: 500;
+  background: var(--surface-2);
   color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  padding: 0.5rem 1.5rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  padding: 0.55rem 1.3rem;
   cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
 }
 
 button:hover {
-  border-color: var(--accent);
+  border-color: var(--moss);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.primary {
+  background: var(--accent);
+  color: #1a1406;
+  border-color: transparent;
+  font-weight: 600;
+  font-size: 1.05rem;
+  padding: 0.75rem 2.2rem;
+}
+
+.primary:hover {
+  background: var(--accent-hover);
+  border-color: transparent;
+}
+
+select:focus-visible,
+input[type='number']:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--moss);
+  outline-offset: 2px;
 }
 
 canvas {
+  display: block;
   width: 100%;
   height: auto;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  display: block;
+  border-radius: var(--radius);
+}
+
+#scene {
+  background: radial-gradient(ellipse 70% 60% at 50% 100%, #1a2a1f 0%, var(--surface) 70%);
+}
+
+figure {
+  margin: 0;
+}
+
+figcaption {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-top: 0.5rem;
 }
 
 audio {
+  display: block;
   width: 100%;
+  border-radius: 999px;
 }

@@ -124,7 +124,7 @@ function drawScene() {
   const toCanvasX = (x: number) => ((x + sceneWidth / 2) / sceneWidth) * w;
   const toCanvasY = (y: number) => h - (y / sceneDepth) * h;
 
-  sceneCtx.fillStyle = '#d6e4d0';
+  sceneCtx.fillStyle = '#dbe7d3';
   sceneCtx.beginPath();
   sceneCtx.arc(toCanvasX(0), h, 6, Math.PI, 0);
   sceneCtx.fill();
