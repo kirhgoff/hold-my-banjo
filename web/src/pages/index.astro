@@ -1,0 +1,100 @@
+---
+import '../styles/global.css';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>hold-my-banjo</title>
+  </head>
+  <body>
+    <h1>hold-my-banjo</h1>
+    <p>
+      A live, in-browser chorus of eastern banjo frogs (pobblebonk, <em>Limnodynastes dumerilii</em>). Each frog calls
+      on its own jittered rhythm; the coupled modes below make frogs react to calls from their neighbours and are
+      <strong>hypothetical</strong>, borrowed from Japanese tree frog models rather than measured banjo frog behaviour.
+    </p>
+
+    <form id="controls">
+      <label>
+        Frogs
+        <input type="range" id="frogs" min="1" max="100" step="1" value="8" />
+        <output id="frogs-out">8</output>
+      </label>
+      <label>
+        Seed
+        <input type="number" id="seed" value="42017" />
+      </label>
+      <label>
+        Mode
+        <select id="mode">
+          <option value="0">independent</option>
+          <option value="1">event_delay</option>
+          <option value="2">event_advance</option>
+          <option value="3">phase_coupled</option>
+        </select>
+      </label>
+      <label>
+        Coupling strength
+        <input type="range" id="strength" min="0" max="1" step="0.01" value="0" />
+        <output id="strength-out">0</output>
+      </label>
+      <label>
+        Mean interval (s)
+        <input type="range" id="interval" min="0.8" max="8" step="0.1" value="3" />
+        <output id="interval-out">3</output>
+      </label>
+      <label>
+        Hearing radius (m)
+        <input type="range" id="radius" min="1" max="40" step="1" value="15" />
+        <output id="radius-out">15</output>
+      </label>
+      <button id="play" type="button">Play</button>
+    </form>
+
+    <canvas id="scene" width="900" height="600"></canvas>
+    <canvas id="wave" width="900" height="120"></canvas>
+
+    <section>
+      <h2>Real chorus for comparison</h2>
+      <audio controls preload="none" src="/banjo-frogs-long.m4a"></audio>
+    </section>
+
+    <script>
+      import { init } from '../chorus';
+      init();
+    </script>
+
+    <style>
+      #controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+        gap: 0.75rem 1.5rem;
+        align-items: center;
+        margin: 1.5rem 0;
+      }
+
+      #controls label {
+        justify-content: space-between;
+      }
+
+      #controls input[type='range'] {
+        flex: 1;
+      }
+
+      #play {
+        grid-column: 1 / -1;
+        justify-self: start;
+      }
+
+      canvas + canvas {
+        margin-top: 1rem;
+      }
+
+      section {
+        margin-top: 1.5rem;
+      }
+    </style>
+  </body>
+</html>

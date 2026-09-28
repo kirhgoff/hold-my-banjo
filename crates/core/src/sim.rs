@@ -6,9 +6,8 @@ use std::path::PathBuf;
 
 pub const DT: f64 = 0.001;
 
-#[derive(Deserialize, Clone, Copy, PartialEq, Debug, clap::ValueEnum)]
+#[derive(Deserialize, Clone, Copy, PartialEq, Debug)]
 #[serde(rename_all = "snake_case")]
-#[value(rename_all = "snake_case")]
 pub enum Mode {
     Independent,
     EventDelay,
@@ -28,6 +27,19 @@ impl Mode {
 
     pub fn hypothetical(self) -> bool {
         self != Mode::Independent
+    }
+}
+
+impl std::str::FromStr for Mode {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Mode, String> {
+        match s {
+            "independent" => Ok(Mode::Independent),
+            "event_delay" => Ok(Mode::EventDelay),
+            "event_advance" => Ok(Mode::EventAdvance),
+            "phase_coupled" => Ok(Mode::PhaseCoupled),
+            _ => Err(format!("unknown mode {s}")),
+        }
     }
 }
 
@@ -103,6 +115,14 @@ pub struct Output {
 }
 
 impl Scenario {
+    pub fn parse(text: &str) -> Result<Scenario, toml::de::Error> {
+        toml::from_str(text)
+    }
+
+    pub fn bundled() -> Scenario {
+        Scenario::parse(include_str!("../../../scenarios/default.toml")).unwrap()
+    }
+
     pub fn validate(&self) -> Result<(), String> {
         if self.schema_version != 1 {
             return Err(format!("schema_version must be 1, got {}", self.schema_version));
@@ -213,6 +233,7 @@ struct Frog {
     x: f64,
     y: f64,
     phase: f64,
+    interval_jitter: f64,
     intrinsic_s: f64,
     period_s: f64,
     next_allowed_s: f64,
@@ -242,14 +263,15 @@ impl Frog {
         let phase = rng.gen::<f64>();
 
         let b = &s.behaviour;
-        let intrinsic_s = (b.mean_interval_s * (1.0 + b.relative_interval_sd * normal(&mut rng)))
-            .clamp(b.min_interval_s, b.max_interval_s);
+        let interval_jitter = 1.0 + b.relative_interval_sd * normal(&mut rng);
+        let intrinsic_s = (b.mean_interval_s * interval_jitter).clamp(b.min_interval_s, b.max_interval_s);
 
         let mut frog = Frog {
             id,
             x,
             y,
             phase,
+            interval_jitter,
             intrinsic_s,
             period_s: intrinsic_s,
             next_allowed_s: 0.0,
@@ -305,19 +327,56 @@ fn build_links(frogs: &[Frog], s: &Scenario) -> Vec<Vec<Link>> {
     links
 }
 
-pub fn simulate(s: &Scenario, clip_count: usize) -> Vec<CallEvent> {
-    let n = s.frog_count;
-    let mut frogs: Vec<Frog> = (0..n).map(|id| Frog::new(id, s)).collect();
-    let mut links = build_links(&frogs, s);
+pub struct Sim {
+    s: Scenario,
+    clip_count: usize,
+    frogs: Vec<Frog>,
+    links: Vec<Vec<Link>>,
+    drift: Vec<f64>,
+    step: u64,
+}
 
-    let steps = (s.duration_s / DT).round() as u64;
-    let mut drift = vec![0.0f64; n];
-    let mut events: Vec<CallEvent> = Vec::new();
-    let k = s.behaviour.coupling_strength;
-    let mode = s.behaviour.mode;
+impl Sim {
+    pub fn new(s: Scenario, clip_count: usize) -> Sim {
+        let frogs: Vec<Frog> = (0..s.frog_count).map(|id| Frog::new(id, &s)).collect();
+        let links = build_links(&frogs, &s);
+        let drift = vec![0.0; frogs.len()];
+        Sim { s, clip_count, frogs, links, drift, step: 0 }
+    }
 
-    for step in 1..=steps {
-        let now = step as f64 * DT;
+    pub fn scenario(&self) -> &Scenario {
+        &self.s
+    }
+
+    pub fn time_s(&self) -> f64 {
+        self.step as f64 * DT
+    }
+
+    pub fn positions(&self) -> Vec<(f64, f64)> {
+        self.frogs.iter().map(|f| (f.x, f.y)).collect()
+    }
+
+    pub fn update(&mut self, change: impl FnOnce(&mut Scenario)) {
+        change(&mut self.s);
+        let b = &self.s.behaviour;
+        for f in &mut self.frogs {
+            f.intrinsic_s = (b.mean_interval_s * f.interval_jitter).clamp(b.min_interval_s, b.max_interval_s);
+        }
+        self.frogs.truncate(self.s.frog_count);
+        for id in self.frogs.len()..self.s.frog_count {
+            self.frogs.push(Frog::new(id, &self.s));
+        }
+        self.links = build_links(&self.frogs, &self.s);
+        self.drift = vec![0.0; self.frogs.len()];
+    }
+
+    pub fn step(&mut self, events: &mut Vec<CallEvent>) {
+        let Sim { s, clip_count, frogs, links, drift, step } = self;
+        *step += 1;
+        let now = *step as f64 * DT;
+        let n = frogs.len();
+        let k = s.behaviour.coupling_strength;
+        let mode = s.behaviour.mode;
 
         if mode == Mode::PhaseCoupled {
             for i in 0..n {
@@ -341,7 +400,7 @@ pub fn simulate(s: &Scenario, clip_count: usize) -> Vec<CallEvent> {
             }
             if f.phase >= 1.0 {
                 if now >= f.next_allowed_s {
-                    events.push(f.call(now, s, clip_count));
+                    events.push(f.call(now, s, *clip_count));
                 } else {
                     f.phase = 1.0;
                 }
@@ -362,7 +421,15 @@ pub fn simulate(s: &Scenario, clip_count: usize) -> Vec<CallEvent> {
             }
         }
     }
+}
 
+pub fn simulate(s: &Scenario, clip_count: usize) -> Vec<CallEvent> {
+    let mut sim = Sim::new(s.clone(), clip_count);
+    let steps = (s.duration_s / DT).round() as u64;
+    let mut events = Vec::new();
+    for _ in 0..steps {
+        sim.step(&mut events);
+    }
     events
 }
 
@@ -393,7 +460,7 @@ mod tests {
     use super::*;
 
     fn base_scenario() -> Scenario {
-        toml::from_str(include_str!("../scenarios/default.toml")).unwrap()
+        Scenario::bundled()
     }
 
     #[test]

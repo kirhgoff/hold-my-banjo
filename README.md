@@ -10,6 +10,7 @@ To hear what a real banjo frog chorus sounds like, listen to [audio/banjo-frogs-
 cargo run --release -- play                    # play the chorus live on the default output device
 cargo run --release -- render                  # render to out/chorus.wav and log calls to out/events.csv
 cargo run --release -- analyze out/events.csv  # per-frog call intervals and chorus overlap
+cargo test                                     # run the core simulation and mixing tests
 ```
 
 Scenarios are TOML files, and `scenarios/default.toml` is the default. You can override most parameters from the command line (`--frogs`, `--seed`, `--duration`, `--mode`, `--strength`, `--mean-interval`, `--hearing-radius`, …). Run `cargo run -- play --help` to see the full list.
@@ -25,9 +26,26 @@ Call samples are loaded from the `.wav` files in `assets/` (configure this with 
 
 The bundled default scenario is marked `experimental`. Its values are placeholders, not measured species data.
 
+## Web version
+
+The same simulation and mixer run live in the browser, compiled to WebAssembly and driven from an `AudioWorklet`.
+
+Prerequisites: `rustup target add wasm32-unknown-unknown` and [bun](https://bun.sh).
+
+```sh
+cd web
+bun install
+bun run dev    # local dev server
+bun run build  # compile the core to WebAssembly, copy it and the reference recording into web/public/, build the Astro site
+```
+
+Deployment runs on push to the `release` branch: GitHub Actions runs `wrangler deploy`, which needs the repo secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. To deploy locally instead, run `bun run deploy` with `wrangler` logged in.
+
 ## Approach
 
 The simulator works in two stages. First it simulates when each frog calls. Then it renders audio from the resulting list of call events. Since the events are fixed before any audio is produced, a given seed always gives the same CSV and the same WAV.
+
+The Rust code is split into three crates: `crates/core` (simulation and mixing, no I/O), `crates/cli` (the `play`/`render`/`analyze` binary), and `crates/wasm` (a thin `extern "C"` wrapper around core for the browser). The browser runs the same core inside an `AudioWorklet`, stepping the simulation just ahead of the audio clock and feeding triggers into the mixer as they happen; parameter changes apply live, and changing the seed restarts the engine.
 
 ```mermaid
 flowchart LR
@@ -40,6 +58,7 @@ flowchart LR
     F --> H[mixer<br/>up to 256 voices, tanh limiter]
     H --> I[play: live output]
     H --> J[render: chorus.wav]
+    H --> K[wasm: AudioWorklet in browser]
 ```
 
 ### Frogs as oscillators

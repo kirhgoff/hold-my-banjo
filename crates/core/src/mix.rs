@@ -1,6 +1,6 @@
 use crate::sim::{CallEvent, Scenario};
+use std::collections::VecDeque;
 use std::f64::consts::{PI, TAU};
-use std::path::{Path, PathBuf};
 
 pub const MAX_VOICES: usize = 256;
 pub const FADE_S: f64 = 0.005;
@@ -25,14 +25,13 @@ struct Voice {
 
 pub struct Mixer {
     clips: Vec<Vec<f32>>,
-    triggers: Vec<Trigger>,
-    next: usize,
+    triggers: VecDeque<Trigger>,
     frame: u64,
     voices: Vec<Voice>,
     master_gain: f32,
 }
 
-fn prepare(mono: Vec<f32>, src_sr: u32, dst_sr: u32) -> Vec<f32> {
+pub fn prepare(mono: Vec<f32>, src_sr: u32, dst_sr: u32) -> Vec<f32> {
     let resampled = if src_sr == dst_sr || mono.is_empty() {
         mono
     } else {
@@ -91,88 +90,29 @@ pub fn synth_bonks(sr: u32) -> Vec<Vec<f32>> {
         .collect()
 }
 
-pub fn load_clips(dir: &Path, sr: u32) -> Result<(Vec<Vec<f32>>, &'static str), String> {
-    let mut paths: Vec<PathBuf> = match std::fs::read_dir(dir) {
-        Ok(rd) => rd
-            .filter_map(|e| e.ok())
-            .map(|e| e.path())
-            .filter(|p| p.extension().map(|ext| ext.eq_ignore_ascii_case("wav")).unwrap_or(false))
-            .collect(),
-        Err(_) => Vec::new(),
-    };
-
-    if paths.is_empty() {
-        return Ok((synth_bonks(sr), "synthetic_placeholder"));
-    }
-    paths.sort();
-
-    let mut clips = Vec::with_capacity(paths.len());
-    for path in &paths {
-        let mut reader = hound::WavReader::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
-        let spec = reader.spec();
-        let channels = spec.channels as usize;
-
-        let samples: Vec<f32> = match spec.sample_format {
-            hound::SampleFormat::Float => reader
-                .samples::<f32>()
-                .collect::<Result<Vec<f32>, _>>()
-                .map_err(|e| format!("{}: {e}", path.display()))?,
-            hound::SampleFormat::Int => {
-                let scale = (1i64 << (spec.bits_per_sample - 1)) as f32;
-                reader
-                    .samples::<i32>()
-                    .collect::<Result<Vec<i32>, _>>()
-                    .map_err(|e| format!("{}: {e}", path.display()))?
-                    .into_iter()
-                    .map(|s| s as f32 / scale)
-                    .collect()
-            }
-        };
-
-        let mono: Vec<f32> = if channels <= 1 {
-            samples
-        } else {
-            samples
-                .chunks(channels)
-                .map(|c| c.iter().sum::<f32>() / channels as f32)
-                .collect()
-        };
-
-        clips.push(prepare(mono, spec.sample_rate, sr));
-    }
-
-    Ok((clips, "wav"))
-}
-
-pub fn triggers(events: &[CallEvent], s: &Scenario, sr: u32) -> Vec<Trigger> {
+pub fn trigger(e: &CallEvent, s: &Scenario, sr: u32) -> Trigger {
     let half_w = s.scene.width_m / 2.0;
-    events
-        .iter()
-        .map(|e| {
-            let frame = (e.time_s * sr as f64).round() as u64;
-            let d = e.x_m.hypot(e.y_m);
-            let att = DISTANCE_REF_M / (DISTANCE_REF_M + d);
-            let pan = (s.audio.stereo_width * e.x_m / half_w).clamp(-1.0, 1.0);
-            let a = (pan + 1.0) * PI / 4.0;
-            let gl = (e.gain * att * a.cos()) as f32;
-            let gr = (e.gain * att * a.sin()) as f32;
-            Trigger {
-                frame,
-                clip: e.clip_id,
-                step: e.pitch_ratio,
-                gl,
-                gr,
-            }
-        })
-        .collect()
+    let frame = (e.time_s * sr as f64).round() as u64;
+    let d = e.x_m.hypot(e.y_m);
+    let att = DISTANCE_REF_M / (DISTANCE_REF_M + d);
+    let pan = (s.audio.stereo_width * e.x_m / half_w).clamp(-1.0, 1.0);
+    let a = (pan + 1.0) * PI / 4.0;
+    let gl = (e.gain * att * a.cos()) as f32;
+    let gr = (e.gain * att * a.sin()) as f32;
+    Trigger {
+        frame,
+        clip: e.clip_id,
+        step: e.pitch_ratio,
+        gl,
+        gr,
+    }
 }
 
 impl Mixer {
-    pub fn new(clips: Vec<Vec<f32>>, triggers: Vec<Trigger>, master_gain: f32) -> Mixer {
+    pub fn new(clips: Vec<Vec<f32>>, master_gain: f32) -> Mixer {
         Mixer {
             clips,
-            triggers,
-            next: 0,
+            triggers: VecDeque::new(),
             frame: 0,
             voices: (0..MAX_VOICES)
                 .map(|_| Voice { clip: 0, pos: 0.0, step: 1.0, gl: 0.0, gr: 0.0, active: false })
@@ -181,10 +121,18 @@ impl Mixer {
         }
     }
 
+    pub fn push(&mut self, t: Trigger) {
+        self.triggers.push_back(t);
+    }
+
+    pub fn frame(&self) -> u64 {
+        self.frame
+    }
+
     pub fn render(&mut self, out: &mut [f32], channels: usize) {
         for frame in out.chunks_exact_mut(channels) {
-            while self.next < self.triggers.len() && self.triggers[self.next].frame <= self.frame {
-                let t = &self.triggers[self.next];
+            while self.triggers.front().is_some_and(|t| t.frame <= self.frame) {
+                let t = self.triggers.pop_front().unwrap();
                 if let Some(v) = self.voices.iter_mut().find(|v| !v.active) {
                     v.clip = t.clip;
                     v.pos = 0.0;
@@ -193,7 +141,6 @@ impl Mixer {
                     v.gr = t.gr;
                     v.active = true;
                 }
-                self.next += 1;
             }
 
             let mut l = 0.0f32;
@@ -254,16 +201,18 @@ mod tests {
     #[test]
     fn ac06_fifty_simultaneous() {
         let clips = synth_bonks(48000);
-        let make_triggers = || {
-            (0..50)
-                .map(|_| Trigger { frame: 100, clip: 0, step: 1.0, gl: 1.0, gr: 1.0 })
-                .collect::<Vec<Trigger>>()
+        let push_triggers = |m: &mut Mixer| {
+            for _ in 0..50 {
+                m.push(Trigger { frame: 100, clip: 0, step: 1.0, gl: 1.0, gr: 1.0 });
+            }
         };
 
-        let mut m1 = Mixer::new(clips.clone(), make_triggers(), 1.0);
+        let mut m1 = Mixer::new(clips.clone(), 1.0);
+        push_triggers(&mut m1);
         let out1 = render_offline(&mut m1, 20000, 64);
 
-        let mut m2 = Mixer::new(clips, make_triggers(), 1.0);
+        let mut m2 = Mixer::new(clips, 1.0);
+        push_triggers(&mut m2);
         let out2 = render_offline(&mut m2, 20000, 4096);
 
         for &s in &out1 {
@@ -276,8 +225,8 @@ mod tests {
     #[test]
     fn ac07_exact_onset_frame() {
         let clips = vec![vec![0.5f32; 100]];
-        let triggers = vec![Trigger { frame: 1000, clip: 0, step: 1.0, gl: 1.0, gr: 1.0 }];
-        let mut m = Mixer::new(clips, triggers, 1.0);
+        let mut m = Mixer::new(clips, 1.0);
+        m.push(Trigger { frame: 1000, clip: 0, step: 1.0, gl: 1.0, gr: 1.0 });
         let out = render_offline(&mut m, 1100, 64);
 
         assert_eq!(out[2 * 999], 0.0);
@@ -287,15 +236,17 @@ mod tests {
 
     #[test]
     fn ac02_offline_pcm_identical() {
-        let mut s: Scenario = toml::from_str(include_str!("../scenarios/default.toml")).unwrap();
+        let mut s = Scenario::bundled();
         s.duration_s = 5.0;
 
         let run = || {
             let sr = s.audio.preferred_sample_rate;
             let clips = synth_bonks(sr);
             let events = crate::sim::simulate(&s, clips.len());
-            let trigs = triggers(&events, &s, sr);
-            let mut m = Mixer::new(clips, trigs, s.audio.master_gain);
+            let mut m = Mixer::new(clips, s.audio.master_gain);
+            for e in &events {
+                m.push(trigger(e, &s, sr));
+            }
             render_offline(&mut m, (s.duration_s * sr as f64) as usize + 2 * 48000, 1024)
         };
 
