@@ -1,7 +1,7 @@
 pub mod mix;
 pub mod sim;
 
-use mix::{synth_bonks, trigger, Mixer};
+use mix::{synth_bonks, synth_bonks_with, trigger, Bonk, Mixer, Trigger};
 use sim::{CallEvent, Scenario, Sim};
 
 pub struct Chorus {
@@ -25,6 +25,18 @@ impl Chorus {
 
     pub fn sim_mut(&mut self) -> &mut Sim {
         &mut self.sim
+    }
+
+    pub fn set_bonk(&mut self, b: &Bonk) {
+        self.mixer.set_clips(synth_bonks_with(b, self.sr));
+    }
+
+    pub fn audition(&mut self) {
+        self.mixer.push(Trigger { frame: self.mixer.frame(), clip: 1, step: 1.0, gl: 1.0, gr: 1.0 });
+    }
+
+    pub fn clip(&self, i: usize) -> &[f32] {
+        self.mixer.clip(i)
     }
 
     pub fn render(&mut self, out: &mut [f32]) -> &[CallEvent] {

@@ -5,11 +5,18 @@ const strengthInput = document.getElementById('strength') as HTMLInputElement;
 const intervalInput = document.getElementById('interval') as HTMLInputElement;
 const radiusInput = document.getElementById('radius') as HTMLInputElement;
 const playButton = document.getElementById('play') as HTMLButtonElement;
+const auditionButton = document.getElementById('audition') as HTMLButtonElement;
+const bonkResetButton = document.getElementById('bonk-reset') as HTMLButtonElement;
 const sceneCanvas = document.getElementById('scene') as HTMLCanvasElement;
 const waveCanvas = document.getElementById('wave') as HTMLCanvasElement;
+const bonkCanvas = document.getElementById('bonk-wave') as HTMLCanvasElement;
 
 const sceneCtx = sceneCanvas.getContext('2d')!;
 const waveCtx = waveCanvas.getContext('2d')!;
+const bonkCtx = bonkCanvas.getContext('2d')!;
+
+const bonkInputs = ['pitch', 'spread', 'duration', 'attack', 'decay', 'sweep', 'sweep-s', 'h2', 'h3']
+  .map((k) => document.getElementById(`bonk-${k}`) as HTMLInputElement);
 
 let ctx: AudioContext | null = null;
 let node: AudioWorkletNode | null = null;
@@ -21,6 +28,10 @@ let sceneWidth = 30;
 let sceneDepth = 20;
 const lastCall = new Map<number, number>();
 
+function bonk() {
+  return bonkInputs.map((i) => Number(i.value));
+}
+
 function params() {
   return {
     frogs: Number(frogsInput.value),
@@ -29,6 +40,7 @@ function params() {
     strength: Number(strengthInput.value),
     interval: Number(intervalInput.value),
     radius: Number(radiusInput.value),
+    bonk: bonk(),
   };
 }
 
@@ -59,26 +71,49 @@ async function start() {
     } else if (data.type === 'calls') {
       const now = performance.now();
       for (const id of data.ids as number[]) lastCall.set(id, now);
+    } else if (data.type === 'bonk-shape') {
+      plot(bonkCtx, bonkCanvas, data.samples);
     }
   };
   requestAnimationFrame(draw);
 }
 
-async function togglePlay() {
+async function ensureRunning() {
   if (!ctx) {
     playButton.disabled = true;
     await start();
     playButton.disabled = false;
-    playButton.textContent = 'Stop';
-    return;
+  } else if (ctx.state !== 'running') {
+    await ctx.resume();
   }
-  if (ctx.state === 'running') {
+  playButton.textContent = 'Stop';
+}
+
+async function togglePlay() {
+  if (ctx?.state === 'running') {
     await ctx.suspend();
     playButton.textContent = 'Play';
   } else {
-    await ctx.resume();
-    playButton.textContent = 'Stop';
+    await ensureRunning();
   }
+}
+
+let auditionTimer = 0;
+
+function audition() {
+  node?.port.postMessage({ type: 'audition' });
+}
+
+function scheduleAudition() {
+  if (auditionTimer) return;
+  auditionTimer = window.setTimeout(() => {
+    auditionTimer = 0;
+    audition();
+  }, 250);
+}
+
+function sendBonk() {
+  node?.port.postMessage({ type: 'bonk', params: bonk() });
 }
 
 function drawScene() {
@@ -107,25 +142,32 @@ function drawScene() {
   }
 }
 
-function drawWave() {
-  const w = waveCanvas.width;
-  const h = waveCanvas.height;
-  waveCtx.clearRect(0, 0, w, h);
-  if (!analyser) return;
+function plot(c: CanvasRenderingContext2D, canvas: HTMLCanvasElement, buf: Float32Array) {
+  const w = canvas.width;
+  const h = canvas.height;
+  c.clearRect(0, 0, w, h);
 
-  const buf = new Float32Array(analyser.fftSize);
-  analyser.getFloatTimeDomainData(buf);
-
-  waveCtx.strokeStyle = '#e0b84a';
-  waveCtx.lineWidth = 1.5;
-  waveCtx.beginPath();
+  c.strokeStyle = '#e0b84a';
+  c.lineWidth = 1.5;
+  c.beginPath();
   for (let i = 0; i < buf.length; i++) {
     const x = (i / (buf.length - 1)) * w;
     const y = h / 2 - buf[i] * (h / 2);
-    if (i === 0) waveCtx.moveTo(x, y);
-    else waveCtx.lineTo(x, y);
+    if (i === 0) c.moveTo(x, y);
+    else c.lineTo(x, y);
   }
-  waveCtx.stroke();
+  c.stroke();
+}
+
+function drawWave() {
+  if (!analyser) {
+    waveCtx.clearRect(0, 0, waveCanvas.width, waveCanvas.height);
+    return;
+  }
+
+  const buf = new Float32Array(analyser.fftSize);
+  analyser.getFloatTimeDomainData(buf);
+  plot(waveCtx, waveCanvas, buf);
 }
 
 function draw() {
@@ -154,5 +196,25 @@ export function init() {
 
   seedInput.addEventListener('change', () => {
     node?.port.postMessage({ type: 'reset', params: params() });
+  });
+
+  for (const input of bonkInputs) {
+    input.addEventListener('input', () => {
+      updateOutput(input);
+      sendBonk();
+      scheduleAudition();
+    });
+  }
+  auditionButton.addEventListener('click', async () => {
+    await ensureRunning();
+    audition();
+  });
+  bonkResetButton.addEventListener('click', () => {
+    for (const input of bonkInputs) {
+      input.value = input.defaultValue;
+      updateOutput(input);
+    }
+    sendBonk();
+    scheduleAudition();
   });
 }

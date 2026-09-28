@@ -6,6 +6,35 @@ pub const MAX_VOICES: usize = 256;
 pub const FADE_S: f64 = 0.005;
 pub const DISTANCE_REF_M: f64 = 5.0;
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Bonk {
+    pub pitch_hz: f64,
+    pub spread_hz: f64,
+    pub duration_s: f64,
+    pub attack_s: f64,
+    pub decay_s: f64,
+    pub sweep_depth: f64,
+    pub sweep_s: f64,
+    pub harmonic2: f64,
+    pub harmonic3: f64,
+}
+
+impl Default for Bonk {
+    fn default() -> Bonk {
+        Bonk {
+            pitch_hz: 440.0,
+            spread_hz: 40.0,
+            duration_s: 0.25,
+            attack_s: 0.002,
+            decay_s: 0.06,
+            sweep_depth: 0.15,
+            sweep_s: 0.02,
+            harmonic2: 0.35,
+            harmonic3: 0.1,
+        }
+    }
+}
+
 pub struct Trigger {
     pub frame: u64,
     pub clip: usize,
@@ -70,19 +99,22 @@ pub fn prepare(mono: Vec<f32>, src_sr: u32, dst_sr: u32) -> Vec<f32> {
 }
 
 pub fn synth_bonks(sr: u32) -> Vec<Vec<f32>> {
-    [400.0f64, 440.0, 480.0]
+    synth_bonks_with(&Bonk::default(), sr)
+}
+
+pub fn synth_bonks_with(b: &Bonk, sr: u32) -> Vec<Vec<f32>> {
+    [b.pitch_hz - b.spread_hz, b.pitch_hz, b.pitch_hz + b.spread_hz]
         .iter()
         .map(|&f0| {
-            let dur = 0.25f64;
-            let n = (dur * sr as f64) as usize;
+            let n = (b.duration_s * sr as f64) as usize;
             let mut phase = 0.0f64;
             let mut samples = Vec::with_capacity(n);
             for k in 0..n {
                 let t = k as f64 / sr as f64;
-                let f = f0 * (1.0 + 0.15 * (-t / 0.02).exp());
+                let f = f0 * (1.0 + b.sweep_depth * (-t / b.sweep_s).exp());
                 phase += TAU * f / sr as f64;
-                let env = (1.0 - (-t / 0.002).exp()) * (-t / 0.06).exp();
-                let s = env * (phase.sin() + 0.35 * (2.0 * phase).sin() + 0.1 * (3.0 * phase).sin());
+                let env = (1.0 - (-t / b.attack_s).exp()) * (-t / b.decay_s).exp();
+                let s = env * (phase.sin() + b.harmonic2 * (2.0 * phase).sin() + b.harmonic3 * (3.0 * phase).sin());
                 samples.push(s as f32);
             }
             prepare(samples, sr, sr)
@@ -123,6 +155,19 @@ impl Mixer {
 
     pub fn push(&mut self, t: Trigger) {
         self.triggers.push_back(t);
+    }
+
+    pub fn clip(&self, i: usize) -> &[f32] {
+        &self.clips[i]
+    }
+
+    pub fn set_clips(&mut self, clips: Vec<Vec<f32>>) {
+        self.clips = clips;
+        for v in &mut self.voices {
+            if v.clip >= self.clips.len() {
+                v.active = false;
+            }
+        }
     }
 
     pub fn frame(&self) -> u64 {
@@ -197,6 +242,21 @@ pub fn render_offline(m: &mut Mixer, frames: usize, block: usize) -> Vec<f32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn default_bonk_matches_synth_bonks() {
+        assert_eq!(synth_bonks_with(&Bonk::default(), 48000), synth_bonks(48000));
+    }
+
+    #[test]
+    fn set_clips_mid_voice_is_safe() {
+        let mut m = Mixer::new(vec![vec![0.5f32; 1000]], 1.0);
+        m.push(Trigger { frame: 0, clip: 0, step: 1.0, gl: 1.0, gr: 1.0 });
+        render_offline(&mut m, 500, 64);
+        m.set_clips(vec![vec![0.5f32; 100]]);
+        let out = render_offline(&mut m, 500, 64);
+        assert!(out.iter().all(|&s| s == 0.0));
+    }
 
     #[test]
     fn ac06_fifty_simultaneous() {

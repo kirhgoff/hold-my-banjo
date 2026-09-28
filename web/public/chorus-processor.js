@@ -7,12 +7,15 @@ class ChorusProcessor extends AudioWorkletProcessor {
     this.port.onmessage = ({ data }) => {
       if (data.type === 'reset') this.create(data.params);
       if (data.type === 'set') this.set(data.key, data.value);
+      if (data.type === 'bonk') this.setBonk(data.params);
+      if (data.type === 'audition') this.wasm.hmb_audition(this.engine);
     };
   }
 
   create(p) {
     if (this.engine) this.wasm.hmb_free(this.engine);
     this.engine = this.wasm.hmb_new(sampleRate, p.seed, p.frogs, p.mode, p.strength, p.interval, p.radius);
+    this.setBonk(p.bonk);
     this.postFrogs();
   }
 
@@ -23,6 +26,13 @@ class ChorusProcessor extends AudioWorkletProcessor {
     else if (key === 'strength') w.hmb_set_strength(e, value);
     else if (key === 'interval') w.hmb_set_mean_interval(e, value);
     else if (key === 'radius') w.hmb_set_hearing_radius(e, value);
+  }
+
+  setBonk(b) {
+    const e = this.engine, w = this.wasm;
+    w.hmb_set_bonk(e, ...b);
+    const samples = new Float32Array(w.memory.buffer, w.hmb_bonk_samples(e), w.hmb_bonk_len(e)).slice();
+    this.port.postMessage({ type: 'bonk-shape', samples });
   }
 
   postFrogs() {
