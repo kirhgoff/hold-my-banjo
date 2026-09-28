@@ -1,3 +1,4 @@
+use hold_my_banjo_core::mix::Bonk;
 use hold_my_banjo_core::sim::{Mode, Scenario};
 use hold_my_banjo_core::Chorus;
 
@@ -127,4 +128,46 @@ pub unsafe extern "C" fn hmb_set_mean_interval(e: *mut Engine, v: f64) {
 pub unsafe extern "C" fn hmb_set_hearing_radius(e: *mut Engine, v: f64) {
     let engine = &mut *e;
     engine.chorus.sim_mut().update(|s| s.behaviour.hearing_radius_m = v.max(0.1));
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn hmb_set_bonk(
+    e: *mut Engine,
+    pitch_hz: f64,
+    spread_hz: f64,
+    duration_s: f64,
+    attack_s: f64,
+    decay_s: f64,
+    sweep_depth: f64,
+    sweep_s: f64,
+    harmonic2: f64,
+    harmonic3: f64,
+) {
+    let b = Bonk {
+        pitch_hz: pitch_hz.clamp(100.0, 1500.0),
+        spread_hz: spread_hz.clamp(0.0, 200.0),
+        duration_s: duration_s.clamp(0.05, 1.0),
+        attack_s: attack_s.clamp(0.0005, 0.1),
+        decay_s: decay_s.clamp(0.005, 1.0),
+        sweep_depth: sweep_depth.clamp(-0.5, 1.0),
+        sweep_s: sweep_s.clamp(0.001, 0.2),
+        harmonic2: harmonic2.clamp(0.0, 1.0),
+        harmonic3: harmonic3.clamp(0.0, 1.0),
+    };
+    (&mut *e).chorus.set_bonk(&b);
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn hmb_audition(e: *mut Engine) {
+    (&mut *e).chorus.audition();
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn hmb_bonk_len(e: *mut Engine) -> u32 {
+    (&*e).chorus.clip(1).len() as u32
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn hmb_bonk_samples(e: *mut Engine) -> *const f32 {
+    (&*e).chorus.clip(1).as_ptr()
 }

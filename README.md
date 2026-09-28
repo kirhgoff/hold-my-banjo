@@ -28,7 +28,7 @@ The bundled default scenario is marked `experimental`. Its values are placeholde
 
 ## Web version
 
-The same simulation and mixer run live in the browser, compiled to WebAssembly and driven from an `AudioWorklet`.
+The same simulation and mixer run live in the browser, compiled to WebAssembly and driven from an `AudioWorklet`. The Bonk panel reshapes the synthetic call live (pitch and spread between the three variants, duration, attack/decay, pitch sweep, harmonic levels); Audition plays a single bonk, and Reset bonk restores the defaults.
 
 Prerequisites: `rustup target add wasm32-unknown-unknown` and [bun](https://bun.sh).
 
