@@ -2,7 +2,7 @@
 
 A chorus simulator for the eastern banjo frog (pobblebonk, *Limnodynastes dumerilii*). It places a number of frogs in a 2D scene, simulates when each one calls, and mixes the "bonk" calls into stereo audio. Each frog is panned and attenuated according to where it sits in the scene.
 
-The original recording of the banjo frogs sound: [audio/banjo-frogs-long.m4a](audio/banjo-frogs-long.m4a).
+To hear what a real banjo frog chorus sounds like, listen to [audio/banjo-frogs-long.m4a](audio/banjo-frogs-long.m4a). It is a reference recording for comparing with the simulation, not an input to it.
 
 ## Usage
 
