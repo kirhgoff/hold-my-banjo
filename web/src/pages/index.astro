@@ -6,10 +6,12 @@ import '../styles/global.css';
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="A live chorus of eastern banjo frogs (pobblebonks), synthesised in your browser." />
+    <meta name="theme-color" content="#0c1210" />
     <title>Hold My Banjo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,400&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
   </head>
   <body>
     <header class="hero">
@@ -18,111 +20,144 @@ import '../styles/global.css';
         <h1>Hold My Banjo</h1>
         <p class="tagline">A live chorus of pobblebonks, synthesised in your browser</p>
       </div>
-      <a class="credit" href="https://commons.wikimedia.org/wiki/File:Eastern_Banjo_Frog_(Limnodynastes_dumerili)_(8398132352).jpg">Photo: Matt from Melbourne, CC BY 2.0</a>
     </header>
-    <p>
-      A live, in-browser chorus of eastern banjo frogs (pobblebonk, <em>Limnodynastes dumerilii</em>). Each frog calls
-      on its own jittered rhythm; the coupled modes below make frogs react to calls from their neighbours and are
-      <strong>hypothetical</strong>, borrowed from Japanese tree frog models rather than measured banjo frog behaviour.
-    </p>
 
-    <form id="controls">
-      <label>
-        Frogs
-        <input type="range" id="frogs" min="1" max="100" step="1" value="8" />
-        <output id="frogs-out">8</output>
-      </label>
-      <label>
-        Seed
-        <input type="number" id="seed" value="42017" />
-      </label>
-      <label>
-        Mode
-        <select id="mode">
-          <option value="0">independent</option>
-          <option value="1">event_delay</option>
-          <option value="2">event_advance</option>
-          <option value="3">phase_coupled</option>
-        </select>
-      </label>
-      <label>
-        Coupling strength
-        <input type="range" id="strength" min="0" max="1" step="0.01" value="0" />
-        <output id="strength-out">0</output>
-      </label>
-      <label>
-        Mean interval (s)
-        <input type="range" id="interval" min="0.8" max="8" step="0.1" value="3" />
-        <output id="interval-out">3</output>
-      </label>
-      <label>
-        Hearing radius (m)
-        <input type="range" id="radius" min="1" max="40" step="1" value="15" />
-        <output id="radius-out">15</output>
-      </label>
-      <fieldset id="bonk">
-        <legend>Bonk</legend>
-        <label>
-          Pitch (Hz)
-          <input type="range" id="bonk-pitch" min="100" max="1500" step="1" value="440" />
-          <output id="bonk-pitch-out">440</output>
-        </label>
-        <label>
-          Spread (Hz)
-          <input type="range" id="bonk-spread" min="0" max="200" step="1" value="40" />
-          <output id="bonk-spread-out">40</output>
-        </label>
-        <label>
-          Duration (s)
-          <input type="range" id="bonk-duration" min="0.05" max="1" step="0.01" value="0.25" />
-          <output id="bonk-duration-out">0.25</output>
-        </label>
-        <label>
-          Attack (s)
-          <input type="range" id="bonk-attack" min="0.0005" max="0.1" step="0.0005" value="0.002" />
-          <output id="bonk-attack-out">0.002</output>
-        </label>
-        <label>
-          Decay (s)
-          <input type="range" id="bonk-decay" min="0.005" max="1" step="0.005" value="0.06" />
-          <output id="bonk-decay-out">0.06</output>
-        </label>
-        <label>
-          Sweep depth
-          <input type="range" id="bonk-sweep" min="-0.5" max="1" step="0.01" value="0.15" />
-          <output id="bonk-sweep-out">0.15</output>
-        </label>
-        <label>
-          Sweep time (s)
-          <input type="range" id="bonk-sweep-s" min="0.001" max="0.2" step="0.001" value="0.02" />
-          <output id="bonk-sweep-s-out">0.02</output>
-        </label>
-        <label>
-          2nd harmonic
-          <input type="range" id="bonk-h2" min="0" max="1" step="0.01" value="0.35" />
-          <output id="bonk-h2-out">0.35</output>
-        </label>
-        <label>
-          3rd harmonic
-          <input type="range" id="bonk-h3" min="0" max="1" step="0.01" value="0.1" />
-          <output id="bonk-h3-out">0.1</output>
-        </label>
-        <canvas id="bonk-wave" width="900" height="120"></canvas>
-        <div>
-          <button id="audition" type="button">Audition</button>
-          <button id="bonk-reset" type="button">Reset bonk</button>
+    <main>
+      <p class="intro">
+        A live, in-browser chorus of eastern banjo frogs (pobblebonk, <em>Limnodynastes dumerilii</em>). Each frog calls
+        on its own jittered rhythm; the coupled modes make frogs react to calls from their neighbours and are
+        <strong>hypothetical</strong>, borrowed from Japanese tree frog models rather than measured banjo frog behaviour.
+      </p>
+
+      <form id="controls">
+        <fieldset id="chorus">
+          <legend>Chorus</legend>
+          <p class="hint">How many frogs are at the pond and how they listen to each other.</p>
+          <div class="grid">
+            <label>
+              <span>Frogs</span>
+              <output id="frogs-out">8</output>
+              <input type="range" id="frogs" min="1" max="100" step="1" value="8" />
+            </label>
+            <label>
+              <span>Seed</span>
+              <input type="number" id="seed" value="42017" />
+            </label>
+            <label>
+              <span>Mode</span>
+              <select id="mode">
+                <option value="0">Independent</option>
+                <option value="1">Event delay</option>
+                <option value="2">Event advance</option>
+                <option value="3">Phase coupled</option>
+              </select>
+            </label>
+            <label>
+              <span>Coupling strength</span>
+              <output id="strength-out">0</output>
+              <input type="range" id="strength" min="0" max="1" step="0.01" value="0" />
+            </label>
+            <label>
+              <span>Mean interval (s)</span>
+              <output id="interval-out">3</output>
+              <input type="range" id="interval" min="0.8" max="8" step="0.1" value="3" />
+            </label>
+            <label>
+              <span>Hearing radius (m)</span>
+              <output id="radius-out">15</output>
+              <input type="range" id="radius" min="1" max="40" step="1" value="15" />
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset id="bonk">
+          <legend>Bonk</legend>
+          <p class="hint">The shape of a single call. Moving a slider auditions it.</p>
+          <div class="grid">
+            <label>
+              <span>Pitch (Hz)</span>
+              <output id="bonk-pitch-out">440</output>
+              <input type="range" id="bonk-pitch" min="100" max="1500" step="1" value="440" />
+            </label>
+            <label>
+              <span>Spread (Hz)</span>
+              <output id="bonk-spread-out">40</output>
+              <input type="range" id="bonk-spread" min="0" max="200" step="1" value="40" />
+            </label>
+            <label>
+              <span>Duration (s)</span>
+              <output id="bonk-duration-out">0.25</output>
+              <input type="range" id="bonk-duration" min="0.05" max="1" step="0.01" value="0.25" />
+            </label>
+            <label>
+              <span>Attack (s)</span>
+              <output id="bonk-attack-out">0.002</output>
+              <input type="range" id="bonk-attack" min="0.0005" max="0.1" step="0.0005" value="0.002" />
+            </label>
+            <label>
+              <span>Decay (s)</span>
+              <output id="bonk-decay-out">0.06</output>
+              <input type="range" id="bonk-decay" min="0.005" max="1" step="0.005" value="0.06" />
+            </label>
+            <label>
+              <span>Sweep depth</span>
+              <output id="bonk-sweep-out">0.15</output>
+              <input type="range" id="bonk-sweep" min="-0.5" max="1" step="0.01" value="0.15" />
+            </label>
+            <label>
+              <span>Sweep time (s)</span>
+              <output id="bonk-sweep-s-out">0.02</output>
+              <input type="range" id="bonk-sweep-s" min="0.001" max="0.2" step="0.001" value="0.02" />
+            </label>
+            <label>
+              <span>2nd harmonic</span>
+              <output id="bonk-h2-out">0.35</output>
+              <input type="range" id="bonk-h2" min="0" max="1" step="0.01" value="0.35" />
+            </label>
+            <label>
+              <span>3rd harmonic</span>
+              <output id="bonk-h3-out">0.1</output>
+              <input type="range" id="bonk-h3" min="0" max="1" step="0.01" value="0.1" />
+            </label>
+          </div>
+          <figure>
+            <canvas id="bonk-wave" width="900" height="120"></canvas>
+            <figcaption>One bonk, amplitude over time</figcaption>
+          </figure>
+          <div class="actions">
+            <button id="audition" type="button">Audition</button>
+            <button id="bonk-reset" type="button">Reset bonk</button>
+          </div>
+        </fieldset>
+      </form>
+
+      <section class="stage">
+        <div class="stage-head">
+          <h2>The pond</h2>
+          <button id="play" type="button" class="primary">Play</button>
         </div>
-      </fieldset>
-      <button id="play" type="button">Play</button>
-    </form>
+        <figure>
+          <canvas id="scene" width="900" height="600"></canvas>
+          <figcaption>Top-down view. Each dot is a frog and lights up when it calls; the half-dot at the bottom is you.</figcaption>
+        </figure>
+        <figure>
+          <canvas id="wave" width="900" height="120"></canvas>
+          <figcaption>What you hear</figcaption>
+        </figure>
+      </section>
 
-    <canvas id="scene" width="900" height="600"></canvas>
-    <canvas id="wave" width="900" height="120"></canvas>
+      <section class="compare">
+        <h2>Real chorus for comparison</h2>
+        <p>A field recording of actual banjo frogs. See how close the synth gets.</p>
+        <audio controls preload="none" src="/banjo-frogs-long.m4a"></audio>
+      </section>
+    </main>
 
-    <section>
-      <h2>Real chorus for comparison</h2>
-      <audio controls preload="none" src="/banjo-frogs-long.m4a"></audio>
-    </section>
+    <footer>
+      <a href="https://github.com/kirhgoff/hold-my-banjo">Source on GitHub</a>
+      <span>Rust · WebAssembly · AudioWorklet</span>
+      <a href="https://commons.wikimedia.org/wiki/File:Eastern_Banjo_Frog_(Limnodynastes_dumerili)_(8398132352).jpg">Photo: Matt from Melbourne, CC BY 2.0</a>
+    </footer>
 
     <script>
       import { init } from '../chorus';
@@ -137,7 +172,7 @@ import '../styles/global.css';
         display: flex;
         align-items: flex-end;
         overflow: hidden;
-        border-radius: 0 0 1.25rem 1.25rem;
+        border-radius: 0 0 var(--radius) var(--radius);
       }
 
       .hero img {
@@ -153,7 +188,7 @@ import '../styles/global.css';
         content: '';
         position: absolute;
         inset: 0;
-        background: linear-gradient(to top, var(--bg) 0%, rgba(15, 21, 18, 0.55) 40%, rgba(15, 21, 18, 0) 75%);
+        background: linear-gradient(to top, var(--bg) 0%, rgba(12, 18, 16, 0.6) 40%, rgba(12, 18, 16, 0) 75%);
       }
 
       .hero-text {
@@ -163,79 +198,97 @@ import '../styles/global.css';
       }
 
       .hero h1 {
-        font-family: 'Fraunces', Georgia, serif;
         font-weight: 900;
-        font-size: clamp(3rem, 11vw, 6.5rem);
+        font-size: clamp(2.6rem, 11vw, 6.5rem);
         line-height: 0.95;
         letter-spacing: -0.02em;
-        margin: 0;
         color: var(--text);
         text-shadow: 0 2px 24px rgba(0, 0, 0, 0.5);
       }
 
       .tagline {
         margin: 0.75rem 0 0;
-        font-size: clamp(1rem, 2.6vw, 1.35rem);
+        font-family: var(--display);
+        font-style: italic;
+        font-weight: 400;
+        font-size: clamp(1.05rem, 2.6vw, 1.5rem);
         color: var(--accent);
+        text-shadow: 0 1px 12px rgba(0, 0, 0, 0.6);
       }
 
-      .credit {
-        position: absolute;
-        z-index: 1;
-        top: 0.75rem;
-        right: 1rem;
-        font-size: 0.7rem;
-        color: rgba(214, 228, 208, 0.75);
-        text-decoration: none;
-      }
-
-      .credit:hover {
-        text-decoration: underline;
+      .intro {
+        max-width: 46rem;
+        font-size: 1.05rem;
       }
 
       #controls {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-        gap: 0.75rem 1.5rem;
-        align-items: center;
-        margin: 1.5rem 0;
+        gap: 1.25rem;
+        margin: 2rem 0;
       }
 
-      #controls label {
-        justify-content: space-between;
+      .hint {
+        font-size: 0.85rem;
+        margin: 0.25rem 0 1rem;
       }
 
-      #controls input[type='range'] {
-        flex: 1;
-      }
-
-      #play {
-        grid-column: 1 / -1;
-        justify-self: start;
-      }
-
-      #bonk {
-        grid-column: 1 / -1;
+      .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-        gap: 0.75rem 1.5rem;
-        align-items: center;
-        border: 1px solid var(--border);
-        border-radius: 0.5rem;
-        padding: 0.75rem 1rem;
-        margin: 0;
+        grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+        gap: 1rem 1.5rem;
       }
 
-      #bonk canvas {
-        grid-column: 1 / -1;
+      #bonk figure {
+        margin-top: 1.25rem;
       }
 
-      canvas + canvas {
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
         margin-top: 1rem;
       }
 
-      section {
-        margin-top: 1.5rem;
+      .stage {
+        margin-top: 2.5rem;
+      }
+
+      .stage-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+
+      .stage figure + figure {
+        margin-top: 1rem;
+      }
+
+      .compare {
+        margin-top: 2.5rem;
+        padding: 1.25rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+      }
+
+      .compare p {
+        margin: 0.25rem 0 1rem;
+        font-size: 0.9rem;
+      }
+
+      footer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1.5rem;
+        margin-top: 3rem;
+        padding: 1.25rem 0 0.5rem;
+        border-top: 1px solid var(--border);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        color: var(--muted);
       }
     </style>
   </body>
