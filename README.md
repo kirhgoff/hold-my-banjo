@@ -41,6 +41,8 @@ bun run build  # compile the core to WebAssembly, copy it and the reference reco
 
 To deploy to Cloudflare (Workers static assets), run `bun run deploy` from `web/`. It builds the site and runs `wrangler deploy` using your `wrangler login` session.
 
+The header photo is ["Eastern Banjo Frog (Limnodynastes dumerili)"](https://commons.wikimedia.org/wiki/File:Eastern_Banjo_Frog_(Limnodynastes_dumerili)_(8398132352).jpg) by Matt from Melbourne, [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/).
+
 ## Approach
 
 The simulator works in two stages. First it simulates when each frog calls. Then it renders audio from the resulting list of call events. Since the events are fixed before any audio is produced, a given seed always gives the same CSV and the same WAV.

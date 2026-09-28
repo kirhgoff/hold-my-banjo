@@ -6,10 +6,20 @@ import '../styles/global.css';
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>hold-my-banjo</title>
+    <title>Hold My Banjo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <h1>hold-my-banjo</h1>
+    <header class="hero">
+      <img src="/banjo-frog.jpg" alt="An eastern banjo frog sitting on moss at night" width="1600" height="830" />
+      <div class="hero-text">
+        <h1>Hold My Banjo</h1>
+        <p class="tagline">A live chorus of pobblebonks, synthesised in your browser</p>
+      </div>
+      <a class="credit" href="https://commons.wikimedia.org/wiki/File:Eastern_Banjo_Frog_(Limnodynastes_dumerili)_(8398132352).jpg">Photo: Matt from Melbourne, CC BY 2.0</a>
+    </header>
     <p>
       A live, in-browser chorus of eastern banjo frogs (pobblebonk, <em>Limnodynastes dumerilii</em>). Each frog calls
       on its own jittered rhythm; the coupled modes below make frogs react to calls from their neighbours and are
@@ -120,6 +130,69 @@ import '../styles/global.css';
     </script>
 
     <style>
+      .hero {
+        position: relative;
+        margin: -1rem -1rem 2rem;
+        min-height: min(70vh, 34rem);
+        display: flex;
+        align-items: flex-end;
+        overflow: hidden;
+        border-radius: 0 0 1.25rem 1.25rem;
+      }
+
+      .hero img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: 40% 55%;
+      }
+
+      .hero::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, var(--bg) 0%, rgba(15, 21, 18, 0.55) 40%, rgba(15, 21, 18, 0) 75%);
+      }
+
+      .hero-text {
+        position: relative;
+        z-index: 1;
+        padding: 0 1.5rem 2rem;
+      }
+
+      .hero h1 {
+        font-family: 'Fraunces', Georgia, serif;
+        font-weight: 900;
+        font-size: clamp(3rem, 11vw, 6.5rem);
+        line-height: 0.95;
+        letter-spacing: -0.02em;
+        margin: 0;
+        color: var(--text);
+        text-shadow: 0 2px 24px rgba(0, 0, 0, 0.5);
+      }
+
+      .tagline {
+        margin: 0.75rem 0 0;
+        font-size: clamp(1rem, 2.6vw, 1.35rem);
+        color: var(--accent);
+      }
+
+      .credit {
+        position: absolute;
+        z-index: 1;
+        top: 0.75rem;
+        right: 1rem;
+        font-size: 0.7rem;
+        color: rgba(214, 228, 208, 0.75);
+        text-decoration: none;
+      }
+
+      .credit:hover {
+        text-decoration: underline;
+      }
+
       #controls {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
