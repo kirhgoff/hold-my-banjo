@@ -7,6 +7,7 @@ const radiusInput = document.getElementById('radius') as HTMLInputElement;
 const playButton = document.getElementById('play') as HTMLButtonElement;
 const auditionButton = document.getElementById('audition') as HTMLButtonElement;
 const bonkResetButton = document.getElementById('bonk-reset') as HTMLButtonElement;
+const volumeInput = document.getElementById('volume') as HTMLInputElement;
 const shareButton = document.getElementById('share') as HTMLButtonElement;
 const controlsForm = document.getElementById('controls') as HTMLFormElement;
 const sceneCanvas = document.getElementById('scene') as HTMLCanvasElement;
@@ -26,6 +27,7 @@ const initialValues = new Map(settingInputs.map((i) => [i, i.value]));
 let ctx: AudioContext | null = null;
 let node: AudioWorkletNode | null = null;
 let analyser: AnalyserNode | null = null;
+let volume: GainNode | null = null;
 let wasmModule: WebAssembly.Module | null = null;
 
 let scenePositions: number[] = [];
@@ -47,6 +49,10 @@ function params() {
     radius: Number(radiusInput.value),
     bonk: bonk(),
   };
+}
+
+function applyVolume() {
+  if (ctx && volume) volume.gain.setTargetAtTime(Number(volumeInput.value) ** 2, ctx.currentTime, 0.02);
 }
 
 function updateOutput(input: HTMLInputElement) {
@@ -99,7 +105,9 @@ async function start() {
   });
   analyser = ctx.createAnalyser();
   analyser.fftSize = 2048;
-  node.connect(analyser).connect(ctx.destination);
+  volume = ctx.createGain();
+  volume.gain.value = Number(volumeInput.value) ** 2;
+  node.connect(analyser).connect(volume).connect(ctx.destination);
   node.port.onmessage = ({ data }) => {
     if (data.type === 'frogs') {
       scenePositions = data.positions;
@@ -224,6 +232,7 @@ export function init() {
   loadSettingsFromUrl();
   controlsForm.addEventListener('input', saveSettingsToUrl);
   controlsForm.addEventListener('change', saveSettingsToUrl);
+  volumeInput.addEventListener('input', applyVolume);
   shareButton.addEventListener('click', () => {
     share();
   });
