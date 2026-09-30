@@ -41,7 +41,7 @@ import '../styles/global.css';
             </label>
             <label>
               <span>Seed</span>
-              <input type="number" id="seed" value="42017" />
+              <input type="number" id="seed" min="0" max="4294967295" step="1" value="42017" />
             </label>
             <label>
               <span>Mode</span>
@@ -139,7 +139,10 @@ import '../styles/global.css';
       <section class="stage">
         <div class="stage-head">
           <h2>The pond</h2>
-          <button id="play" type="button" class="primary">Play</button>
+          <div class="stage-actions">
+            <button id="share" type="button">Spread the bonk</button>
+            <button id="play" type="button" class="primary">Play</button>
+          </div>
         </div>
         <figure>
           <canvas id="scene" width="900" height="600"></canvas>
@@ -265,6 +268,11 @@ import '../styles/global.css';
         justify-content: space-between;
         gap: 0.75rem;
         margin-bottom: 1rem;
+      }
+
+      .stage-actions {
+        display: flex;
+        gap: 0.5rem;
       }
 
       .stage figure + figure {
