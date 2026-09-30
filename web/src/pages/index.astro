@@ -140,6 +140,10 @@ import '../styles/global.css';
         <div class="stage-head">
           <h2>The pond</h2>
           <div class="stage-actions">
+            <label class="volume">
+              <span>Volume</span>
+              <input type="range" id="volume" min="0" max="1" step="0.01" value="1" />
+            </label>
             <button id="share" type="button">Spread the bonk</button>
             <button id="play" type="button" class="primary">Play</button>
           </div>
@@ -272,7 +276,19 @@ import '../styles/global.css';
 
       .stage-actions {
         display: flex;
+        flex-wrap: wrap;
+        align-items: center;
         gap: 0.5rem;
+      }
+
+      .volume {
+        display: flex;
+        gap: 0.75rem;
+        margin-right: 0.75rem;
+      }
+
+      .volume input {
+        width: 8rem;
       }
 
       .stage figure + figure {
