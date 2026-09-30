@@ -7,6 +7,8 @@ const radiusInput = document.getElementById('radius') as HTMLInputElement;
 const playButton = document.getElementById('play') as HTMLButtonElement;
 const auditionButton = document.getElementById('audition') as HTMLButtonElement;
 const bonkResetButton = document.getElementById('bonk-reset') as HTMLButtonElement;
+const shareButton = document.getElementById('share') as HTMLButtonElement;
+const controlsForm = document.getElementById('controls') as HTMLFormElement;
 const sceneCanvas = document.getElementById('scene') as HTMLCanvasElement;
 const waveCanvas = document.getElementById('wave') as HTMLCanvasElement;
 const bonkCanvas = document.getElementById('bonk-wave') as HTMLCanvasElement;
@@ -17,6 +19,9 @@ const bonkCtx = bonkCanvas.getContext('2d')!;
 
 const bonkInputs = ['pitch', 'spread', 'duration', 'attack', 'decay', 'sweep', 'sweep-s', 'h2', 'h3']
   .map((k) => document.getElementById(`bonk-${k}`) as HTMLInputElement);
+
+const settingInputs = [frogsInput, seedInput, modeInput, strengthInput, intervalInput, radiusInput, ...bonkInputs];
+const initialValues = new Map(settingInputs.map((i) => [i, i.value]));
 
 let ctx: AudioContext | null = null;
 let node: AudioWorkletNode | null = null;
@@ -47,6 +52,36 @@ function params() {
 function updateOutput(input: HTMLInputElement) {
   const out = document.getElementById(`${input.id}-out`);
   if (out) out.textContent = input.value;
+}
+
+function loadSettingsFromUrl() {
+  const query = new URLSearchParams(location.search);
+  for (const input of settingInputs) {
+    const value = query.get(input.id);
+    if (value === null) continue;
+    input.value = value;
+    if (input instanceof HTMLInputElement) updateOutput(input);
+  }
+}
+
+function saveSettingsToUrl() {
+  const query = new URLSearchParams();
+  for (const input of settingInputs) {
+    if (input.value !== initialValues.get(input)) query.set(input.id, input.value);
+  }
+  const search = query.toString();
+  history.replaceState(null, '', search ? `?${search}` : location.pathname);
+}
+
+async function share() {
+  const url = location.href;
+  if (navigator.share) {
+    await navigator.share({ title: document.title, url }).catch(() => {});
+    return;
+  }
+  await navigator.clipboard.writeText(url);
+  shareButton.textContent = 'Link copied!';
+  setTimeout(() => (shareButton.textContent = 'Spread the bonk'), 2000);
 }
 
 async function start() {
@@ -184,6 +219,13 @@ function bindControl(input: HTMLInputElement | HTMLSelectElement, key: string) {
 }
 
 export function init() {
+  loadSettingsFromUrl();
+  controlsForm.addEventListener('input', saveSettingsToUrl);
+  controlsForm.addEventListener('change', saveSettingsToUrl);
+  shareButton.addEventListener('click', () => {
+    share();
+  });
+
   playButton.addEventListener('click', () => {
     togglePlay();
   });
@@ -214,6 +256,7 @@ export function init() {
       input.value = input.defaultValue;
       updateOutput(input);
     }
+    saveSettingsToUrl();
     sendBonk();
     scheduleAudition();
   });

@@ -134,7 +134,10 @@ import '../styles/global.css';
       <section class="stage">
         <div class="stage-head">
           <h2>The pond</h2>
-          <button id="play" type="button" class="primary">Play</button>
+          <div class="stage-actions">
+            <button id="share" type="button">Spread the bonk</button>
+            <button id="play" type="button" class="primary">Play</button>
+          </div>
         </div>
         <figure>
           <canvas id="scene" width="900" height="600"></canvas>
@@ -260,6 +263,11 @@ import '../styles/global.css';
         justify-content: space-between;
         gap: 0.75rem;
         margin-bottom: 1rem;
+      }
+
+      .stage-actions {
+        display: flex;
+        gap: 0.5rem;
       }
 
       .stage figure + figure {
