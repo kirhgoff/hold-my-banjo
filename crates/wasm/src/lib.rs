@@ -142,6 +142,7 @@ pub unsafe extern "C" fn hmb_set_bonk(
     sweep_s: f64,
     harmonic2: f64,
     harmonic3: f64,
+    subharmonic: f64,
 ) {
     let b = Bonk {
         pitch_hz: pitch_hz.clamp(100.0, 1500.0),
@@ -153,6 +154,7 @@ pub unsafe extern "C" fn hmb_set_bonk(
         sweep_s: sweep_s.clamp(0.001, 0.2),
         harmonic2: harmonic2.clamp(0.0, 1.0),
         harmonic3: harmonic3.clamp(0.0, 1.0),
+        subharmonic: subharmonic.clamp(0.0, 1.0),
     };
     (&mut *e).chorus.set_bonk(&b);
 }
