@@ -59,7 +59,9 @@ function loadSettingsFromUrl() {
   for (const input of settingInputs) {
     const value = query.get(input.id);
     if (value === null) continue;
+    const previous = input.value;
     input.value = value;
+    if (input.value !== value || !input.checkValidity()) input.value = previous;
     if (input instanceof HTMLInputElement) updateOutput(input);
   }
 }
