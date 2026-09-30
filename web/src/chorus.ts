@@ -15,7 +15,7 @@ const sceneCtx = sceneCanvas.getContext('2d')!;
 const waveCtx = waveCanvas.getContext('2d')!;
 const bonkCtx = bonkCanvas.getContext('2d')!;
 
-const bonkInputs = ['pitch', 'spread', 'duration', 'attack', 'decay', 'sweep', 'sweep-s', 'h2', 'h3']
+const bonkInputs = ['pitch', 'spread', 'duration', 'attack', 'decay', 'sweep', 'sweep-s', 'h2', 'h3', 'sub']
   .map((k) => document.getElementById(`bonk-${k}`) as HTMLInputElement);
 
 let ctx: AudioContext | null = null;
