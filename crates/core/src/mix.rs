@@ -23,7 +23,7 @@ pub struct Bonk {
 impl Default for Bonk {
     fn default() -> Bonk {
         Bonk {
-            pitch_hz: 440.0,
+            pitch_hz: 250.0,
             spread_hz: 40.0,
             duration_s: 0.25,
             attack_s: 0.002,
