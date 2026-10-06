@@ -2,6 +2,9 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "hold-my-banjo",
   "compatibility_date": "2026-09-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "hold-my-banjo.kirhgoff.me", "custom_domain": true }],
   "assets": {
     "directory": "./dist"
   }
