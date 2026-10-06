@@ -29,7 +29,8 @@ fn apply_params(
     s.frog_count = (frog_count as usize).clamp(1, 100);
     s.behaviour.mode = mode(mode_id);
     s.behaviour.coupling_strength = strength.clamp(0.0, 1.0);
-    s.behaviour.mean_interval_s = mean_interval_s.clamp(s.behaviour.min_interval_s, s.behaviour.max_interval_s);
+    s.behaviour.mean_interval_s =
+        mean_interval_s.clamp(s.behaviour.min_interval_s, s.behaviour.max_interval_s);
     s.behaviour.hearing_radius_m = hearing_radius_m.max(0.1);
 }
 
@@ -45,9 +46,21 @@ pub extern "C" fn hmb_new(
 ) -> *mut Engine {
     let mut s = Scenario::bundled();
     s.seed = seed as u64;
-    apply_params(&mut s, frog_count, mode_id, strength, mean_interval_s, hearing_radius_m);
+    apply_params(
+        &mut s,
+        frog_count,
+        mode_id,
+        strength,
+        mean_interval_s,
+        hearing_radius_m,
+    );
     let chorus = Chorus::new(s, sample_rate);
-    let engine = Engine { chorus, out: Vec::new(), fired: Vec::new(), positions: Vec::new() };
+    let engine = Engine {
+        chorus,
+        out: Vec::new(),
+        fired: Vec::new(),
+        positions: Vec::new(),
+    };
     Box::into_raw(Box::new(engine))
 }
 
@@ -83,7 +96,13 @@ pub unsafe extern "C" fn hmb_frog_count(e: *mut Engine) -> u32 {
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn hmb_positions(e: *mut Engine) -> *const f64 {
     let engine = &mut *e;
-    engine.positions = engine.chorus.sim().positions().into_iter().flat_map(|(x, y)| [x, y]).collect();
+    engine.positions = engine
+        .chorus
+        .sim()
+        .positions()
+        .into_iter()
+        .flat_map(|(x, y)| [x, y])
+        .collect();
     engine.positions.as_ptr()
 }
 
@@ -100,34 +119,46 @@ pub unsafe extern "C" fn hmb_scene_depth(e: *mut Engine) -> f64 {
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn hmb_set_frog_count(e: *mut Engine, n: u32) {
     let engine = &mut *e;
-    engine.chorus.sim_mut().update(|s| s.frog_count = (n as usize).clamp(1, 100));
+    engine
+        .chorus
+        .sim_mut()
+        .update(|s| s.frog_count = (n as usize).clamp(1, 100));
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn hmb_set_mode(e: *mut Engine, id: u32) {
     let engine = &mut *e;
-    engine.chorus.sim_mut().update(|s| s.behaviour.mode = mode(id));
+    engine
+        .chorus
+        .sim_mut()
+        .update(|s| s.behaviour.mode = mode(id));
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn hmb_set_strength(e: *mut Engine, k: f64) {
     let engine = &mut *e;
-    engine.chorus.sim_mut().update(|s| s.behaviour.coupling_strength = k.clamp(0.0, 1.0));
+    engine
+        .chorus
+        .sim_mut()
+        .update(|s| s.behaviour.coupling_strength = k.clamp(0.0, 1.0));
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn hmb_set_mean_interval(e: *mut Engine, v: f64) {
     let engine = &mut *e;
-    engine
-        .chorus
-        .sim_mut()
-        .update(|s| s.behaviour.mean_interval_s = v.clamp(s.behaviour.min_interval_s, s.behaviour.max_interval_s));
+    engine.chorus.sim_mut().update(|s| {
+        s.behaviour.mean_interval_s =
+            v.clamp(s.behaviour.min_interval_s, s.behaviour.max_interval_s)
+    });
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn hmb_set_hearing_radius(e: *mut Engine, v: f64) {
     let engine = &mut *e;
-    engine.chorus.sim_mut().update(|s| s.behaviour.hearing_radius_m = v.max(0.1));
+    engine
+        .chorus
+        .sim_mut()
+        .update(|s| s.behaviour.hearing_radius_m = v.max(0.1));
 }
 
 #[unsafe(no_mangle)]

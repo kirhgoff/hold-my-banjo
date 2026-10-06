@@ -12,12 +12,17 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
+          components: rustfmt, clippy
       - run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+      - run: cargo fmt --check
+      - run: cargo clippy -- -D warnings
       - run: cargo test
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
+        working-directory: web
+      - run: bunx tsc --noEmit
         working-directory: web
       - run: bun run build
         working-directory: web
