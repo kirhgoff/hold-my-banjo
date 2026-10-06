@@ -105,25 +105,30 @@ pub fn synth_bonks(sr: u32) -> Vec<Vec<f32>> {
 }
 
 pub fn synth_bonks_with(b: &Bonk, sr: u32) -> Vec<Vec<f32>> {
-    [b.pitch_hz - b.spread_hz, b.pitch_hz, b.pitch_hz + b.spread_hz]
-        .iter()
-        .map(|&f0| {
-            let n = (b.duration_s * sr as f64) as usize;
-            let mut phase = 0.0f64;
-            let mut samples = Vec::with_capacity(n);
-            for k in 0..n {
-                let t = k as f64 / sr as f64;
-                let f = f0 * (1.0 + b.sweep_depth * (-t / b.sweep_s).exp());
-                phase += TAU * f / sr as f64;
-                let env = (1.0 - (-t / b.attack_s).exp()) * (-t / b.decay_s).exp();
-                let tone = phase.sin() + b.harmonic2 * (2.0 * phase).sin() + b.harmonic3 * (3.0 * phase).sin();
-                let croak = 1.0 + b.subharmonic * (0.5 * phase).sin();
-                let s = env * croak * tone;
-                samples.push(s as f32);
-            }
-            prepare(samples, sr, sr)
-        })
-        .collect()
+    [
+        b.pitch_hz - b.spread_hz,
+        b.pitch_hz,
+        b.pitch_hz + b.spread_hz,
+    ]
+    .iter()
+    .map(|&f0| {
+        let n = (b.duration_s * sr as f64) as usize;
+        let mut phase = 0.0f64;
+        let mut samples = Vec::with_capacity(n);
+        for k in 0..n {
+            let t = k as f64 / sr as f64;
+            let f = f0 * (1.0 + b.sweep_depth * (-t / b.sweep_s).exp());
+            phase += TAU * f / sr as f64;
+            let env = (1.0 - (-t / b.attack_s).exp()) * (-t / b.decay_s).exp();
+            let tone =
+                phase.sin() + b.harmonic2 * (2.0 * phase).sin() + b.harmonic3 * (3.0 * phase).sin();
+            let croak = 1.0 + b.subharmonic * (0.5 * phase).sin();
+            let s = env * croak * tone;
+            samples.push(s as f32);
+        }
+        prepare(samples, sr, sr)
+    })
+    .collect()
 }
 
 pub fn trigger(e: &CallEvent, s: &Scenario, sr: u32) -> Trigger {
@@ -151,7 +156,14 @@ impl Mixer {
             triggers: VecDeque::new(),
             frame: 0,
             voices: (0..MAX_VOICES)
-                .map(|_| Voice { clip: 0, pos: 0.0, step: 1.0, gl: 0.0, gr: 0.0, active: false })
+                .map(|_| Voice {
+                    clip: 0,
+                    pos: 0.0,
+                    step: 1.0,
+                    gl: 0.0,
+                    gr: 0.0,
+                    active: false,
+                })
                 .collect(),
             master_gain,
         }
@@ -249,19 +261,34 @@ mod tests {
 
     #[test]
     fn default_bonk_matches_synth_bonks() {
-        assert_eq!(synth_bonks_with(&Bonk::default(), 48000), synth_bonks(48000));
+        assert_eq!(
+            synth_bonks_with(&Bonk::default(), 48000),
+            synth_bonks(48000)
+        );
     }
 
     #[test]
     fn subharmonic_adds_energy_at_half_pitch() {
         let sr = 48000;
         let half_pitch_energy = |subharmonic: f64| {
-            let b = Bonk { spread_hz: 0.0, sweep_depth: 0.0, decay_s: 1.0, subharmonic, ..Bonk::default() };
+            let b = Bonk {
+                spread_hz: 0.0,
+                sweep_depth: 0.0,
+                decay_s: 1.0,
+                subharmonic,
+                ..Bonk::default()
+            };
             let clip = &synth_bonks_with(&b, sr)[1];
             let w = TAU * b.pitch_hz / 2.0 / sr as f64;
-            let (re, im) = clip.iter().enumerate().fold((0.0, 0.0), |(re, im), (k, &s)| {
-                (re + s as f64 * (w * k as f64).cos(), im + s as f64 * (w * k as f64).sin())
-            });
+            let (re, im) = clip
+                .iter()
+                .enumerate()
+                .fold((0.0, 0.0), |(re, im), (k, &s)| {
+                    (
+                        re + s as f64 * (w * k as f64).cos(),
+                        im + s as f64 * (w * k as f64).sin(),
+                    )
+                });
             re.hypot(im)
         };
         assert!(half_pitch_energy(0.5) > 20.0 * half_pitch_energy(0.0));
@@ -270,7 +297,13 @@ mod tests {
     #[test]
     fn set_clips_mid_voice_is_safe() {
         let mut m = Mixer::new(vec![vec![0.5f32; 1000]], 1.0);
-        m.push(Trigger { frame: 0, clip: 0, step: 1.0, gl: 1.0, gr: 1.0 });
+        m.push(Trigger {
+            frame: 0,
+            clip: 0,
+            step: 1.0,
+            gl: 1.0,
+            gr: 1.0,
+        });
         render_offline(&mut m, 500, 64);
         m.set_clips(vec![vec![0.5f32; 100]]);
         let out = render_offline(&mut m, 500, 64);
@@ -282,7 +315,13 @@ mod tests {
         let clips = synth_bonks(48000);
         let push_triggers = |m: &mut Mixer| {
             for _ in 0..50 {
-                m.push(Trigger { frame: 100, clip: 0, step: 1.0, gl: 1.0, gr: 1.0 });
+                m.push(Trigger {
+                    frame: 100,
+                    clip: 0,
+                    step: 1.0,
+                    gl: 1.0,
+                    gr: 1.0,
+                });
             }
         };
 
@@ -305,7 +344,13 @@ mod tests {
     fn ac07_exact_onset_frame() {
         let clips = vec![vec![0.5f32; 100]];
         let mut m = Mixer::new(clips, 1.0);
-        m.push(Trigger { frame: 1000, clip: 0, step: 1.0, gl: 1.0, gr: 1.0 });
+        m.push(Trigger {
+            frame: 1000,
+            clip: 0,
+            step: 1.0,
+            gl: 1.0,
+            gr: 1.0,
+        });
         let out = render_offline(&mut m, 1100, 64);
 
         assert_eq!(out[2 * 999], 0.0);
@@ -326,7 +371,11 @@ mod tests {
             for e in &events {
                 m.push(trigger(e, &s, sr));
             }
-            render_offline(&mut m, (s.duration_s * sr as f64) as usize + 2 * 48000, 1024)
+            render_offline(
+                &mut m,
+                (s.duration_s * sr as f64) as usize + 2 * 48000,
+                1024,
+            )
         };
 
         assert_eq!(run(), run());

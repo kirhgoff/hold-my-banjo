@@ -7,6 +7,7 @@
     "dev": "bun run wasm && astro dev",
     "build": "bun run wasm && astro build",
     "preview": "astro preview",
+    "predeploy": "git diff --quiet HEAD && test -z \"$(git ls-files --others --exclude-standard)\" || (echo commit first && exit 1)",
     "deploy": "bun run build && wrangler deploy"
   },
   "dependencies": {

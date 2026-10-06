@@ -136,11 +136,19 @@ fn banner(s: &Scenario, clip_source: &str) {
         );
     }
     if clip_source == "synthetic_placeholder" {
-        println!("SYNTHETIC PLACEHOLDER bonk in use (no WAV assets found in {})", s.audio.asset_dir.display());
+        println!(
+            "SYNTHETIC PLACEHOLDER bonk in use (no WAV assets found in {})",
+            s.audio.asset_dir.display()
+        );
     }
 }
 
-fn write_csv(s: &Scenario, clip_source: &str, events: &[CallEvent], log_events: bool) -> Result<(), Box<dyn Error>> {
+fn write_csv(
+    s: &Scenario,
+    clip_source: &str,
+    events: &[CallEvent],
+    log_events: bool,
+) -> Result<(), Box<dyn Error>> {
     if let Some(path) = &s.output.event_csv {
         if let Some(parent) = path.parent() {
             if !parent.as_os_str().is_empty() {
@@ -165,7 +173,11 @@ fn load_clips(dir: &Path, sr: u32) -> Result<(Vec<Vec<f32>>, &'static str), Stri
         Ok(rd) => rd
             .filter_map(|e| e.ok())
             .map(|e| e.path())
-            .filter(|p| p.extension().map(|ext| ext.eq_ignore_ascii_case("wav")).unwrap_or(false))
+            .filter(|p| {
+                p.extension()
+                    .map(|ext| ext.eq_ignore_ascii_case("wav"))
+                    .unwrap_or(false)
+            })
             .collect(),
         Err(_) => Vec::new(),
     };
@@ -177,7 +189,8 @@ fn load_clips(dir: &Path, sr: u32) -> Result<(Vec<Vec<f32>>, &'static str), Stri
 
     let mut clips = Vec::with_capacity(paths.len());
     for path in &paths {
-        let mut reader = hound::WavReader::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
+        let mut reader =
+            hound::WavReader::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
         let spec = reader.spec();
         let channels = spec.channels as usize;
 
@@ -217,10 +230,16 @@ fn play(s: Scenario, log_events: bool) -> Result<(), Box<dyn Error>> {
     use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
     let host = cpal::default_host();
-    let device = host.default_output_device().ok_or("no default output device")?;
+    let device = host
+        .default_output_device()
+        .ok_or("no default output device")?;
     let supported = device.default_output_config()?;
     if supported.sample_format() != cpal::SampleFormat::F32 {
-        return Err(format!("default output device does not support f32 samples (got {:?})", supported.sample_format()).into());
+        return Err(format!(
+            "default output device does not support f32 samples (got {:?})",
+            supported.sample_format()
+        )
+        .into());
     }
     let config: cpal::StreamConfig = supported.into();
     let sr = config.sample_rate.0;
@@ -275,7 +294,11 @@ fn render(s: Scenario, log_events: bool) -> Result<(), Box<dyn Error>> {
     }
     let samples = mix::render_offline(&mut mixer, frames, 1024);
 
-    let wav_path = s.output.offline_wav.clone().ok_or("no output.offline_wav configured and no --wav given")?;
+    let wav_path = s
+        .output
+        .offline_wav
+        .clone()
+        .ok_or("no output.offline_wav configured and no --wav given")?;
     if let Some(parent) = wav_path.parent() {
         if !parent.as_os_str().is_empty() {
             std::fs::create_dir_all(parent)?;
@@ -340,7 +363,11 @@ fn analyze(csv: &Path, call_s: f64) -> Result<(), Box<dyn Error>> {
             overlapping += 1;
         }
     }
-    let fraction = if m > 0 { overlapping as f64 / m as f64 } else { 0.0 };
+    let fraction = if m > 0 {
+        overlapping as f64 / m as f64
+    } else {
+        0.0
+    };
     println!("chorus_overlap_fraction={fraction:.6} (call_s={call_s})");
 
     Ok(())

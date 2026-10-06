@@ -125,13 +125,22 @@ impl Scenario {
 
     pub fn validate(&self) -> Result<(), String> {
         if self.schema_version != 1 {
-            return Err(format!("schema_version must be 1, got {}", self.schema_version));
+            return Err(format!(
+                "schema_version must be 1, got {}",
+                self.schema_version
+            ));
         }
         if self.frog_count < 1 || self.frog_count > 100 {
-            return Err(format!("frog_count must be between 1 and 100, got {}", self.frog_count));
+            return Err(format!(
+                "frog_count must be between 1 and 100, got {}",
+                self.frog_count
+            ));
         }
         if !self.duration_s.is_finite() || self.duration_s <= 0.0 {
-            return Err(format!("duration_s must be finite and > 0, got {}", self.duration_s));
+            return Err(format!(
+                "duration_s must be finite and > 0, got {}",
+                self.duration_s
+            ));
         }
 
         let b = &self.behaviour;
@@ -148,19 +157,34 @@ impl Scenario {
             ));
         }
         if b.relative_interval_sd < 0.0 {
-            return Err(format!("behaviour.relative_interval_sd must be >= 0, got {}", b.relative_interval_sd));
+            return Err(format!(
+                "behaviour.relative_interval_sd must be >= 0, got {}",
+                b.relative_interval_sd
+            ));
         }
         if b.min_retrigger_s < 0.0 {
-            return Err(format!("behaviour.min_retrigger_s must be >= 0, got {}", b.min_retrigger_s));
+            return Err(format!(
+                "behaviour.min_retrigger_s must be >= 0, got {}",
+                b.min_retrigger_s
+            ));
         }
         if b.response_cooldown_s < 0.0 {
-            return Err(format!("behaviour.response_cooldown_s must be >= 0, got {}", b.response_cooldown_s));
+            return Err(format!(
+                "behaviour.response_cooldown_s must be >= 0, got {}",
+                b.response_cooldown_s
+            ));
         }
         if b.phase_noise < 0.0 {
-            return Err(format!("behaviour.phase_noise must be >= 0, got {}", b.phase_noise));
+            return Err(format!(
+                "behaviour.phase_noise must be >= 0, got {}",
+                b.phase_noise
+            ));
         }
         if b.coupling_strength < 0.0 {
-            return Err(format!("behaviour.coupling_strength must be >= 0, got {}", b.coupling_strength));
+            return Err(format!(
+                "behaviour.coupling_strength must be >= 0, got {}",
+                b.coupling_strength
+            ));
         }
         match b.mode {
             Mode::EventDelay | Mode::EventAdvance => {
@@ -183,28 +207,52 @@ impl Scenario {
             Mode::Independent => {}
         }
         if b.hearing_radius_m <= 0.0 {
-            return Err(format!("behaviour.hearing_radius_m must be > 0, got {}", b.hearing_radius_m));
+            return Err(format!(
+                "behaviour.hearing_radius_m must be > 0, got {}",
+                b.hearing_radius_m
+            ));
         }
         if b.hearing_decay_m <= 0.0 {
-            return Err(format!("behaviour.hearing_decay_m must be > 0, got {}", b.hearing_decay_m));
+            return Err(format!(
+                "behaviour.hearing_decay_m must be > 0, got {}",
+                b.hearing_decay_m
+            ));
         }
         if self.scene.width_m <= 0.0 {
-            return Err(format!("scene.width_m must be > 0, got {}", self.scene.width_m));
+            return Err(format!(
+                "scene.width_m must be > 0, got {}",
+                self.scene.width_m
+            ));
         }
         if self.scene.depth_m <= 0.0 {
-            return Err(format!("scene.depth_m must be > 0, got {}", self.scene.depth_m));
+            return Err(format!(
+                "scene.depth_m must be > 0, got {}",
+                self.scene.depth_m
+            ));
         }
         if !(self.audio.master_gain > 0.0 && self.audio.master_gain <= 4.0) {
-            return Err(format!("audio.master_gain must be in (0, 4], got {}", self.audio.master_gain));
+            return Err(format!(
+                "audio.master_gain must be in (0, 4], got {}",
+                self.audio.master_gain
+            ));
         }
         if !(0.0..=1.0).contains(&self.audio.stereo_width) {
-            return Err(format!("audio.stereo_width must be in [0, 1], got {}", self.audio.stereo_width));
+            return Err(format!(
+                "audio.stereo_width must be in [0, 1], got {}",
+                self.audio.stereo_width
+            ));
         }
         if self.audio.pitch_sd_semitones < 0.0 {
-            return Err(format!("audio.pitch_sd_semitones must be >= 0, got {}", self.audio.pitch_sd_semitones));
+            return Err(format!(
+                "audio.pitch_sd_semitones must be >= 0, got {}",
+                self.audio.pitch_sd_semitones
+            ));
         }
         if self.audio.gain_sd_db < 0.0 {
-            return Err(format!("audio.gain_sd_db must be >= 0, got {}", self.audio.gain_sd_db));
+            return Err(format!(
+                "audio.gain_sd_db must be >= 0, got {}",
+                self.audio.gain_sd_db
+            ));
         }
         if !(8000..=192000).contains(&self.audio.preferred_sample_rate) {
             return Err(format!(
@@ -264,7 +312,8 @@ impl Frog {
 
         let b = &s.behaviour;
         let interval_jitter = 1.0 + b.relative_interval_sd * normal(&mut rng);
-        let intrinsic_s = (b.mean_interval_s * interval_jitter).clamp(b.min_interval_s, b.max_interval_s);
+        let intrinsic_s =
+            (b.mean_interval_s * interval_jitter).clamp(b.min_interval_s, b.max_interval_s);
 
         let mut frog = Frog {
             id,
@@ -320,7 +369,11 @@ fn build_links(frogs: &[Frog], s: &Scenario) -> Vec<Vec<Link>> {
             let d = dx.hypot(dy);
             if d <= s.behaviour.hearing_radius_m {
                 let weight = (-d / s.behaviour.hearing_decay_m).exp();
-                links[a].push(Link { frog: b, weight, ready_at: 0.0 });
+                links[a].push(Link {
+                    frog: b,
+                    weight,
+                    ready_at: 0.0,
+                });
             }
         }
     }
@@ -341,7 +394,14 @@ impl Sim {
         let frogs: Vec<Frog> = (0..s.frog_count).map(|id| Frog::new(id, &s)).collect();
         let links = build_links(&frogs, &s);
         let drift = vec![0.0; frogs.len()];
-        Sim { s, clip_count, frogs, links, drift, step: 0 }
+        Sim {
+            s,
+            clip_count,
+            frogs,
+            links,
+            drift,
+            step: 0,
+        }
     }
 
     pub fn scenario(&self) -> &Scenario {
@@ -360,7 +420,8 @@ impl Sim {
         change(&mut self.s);
         let b = &self.s.behaviour;
         for f in &mut self.frogs {
-            f.intrinsic_s = (b.mean_interval_s * f.interval_jitter).clamp(b.min_interval_s, b.max_interval_s);
+            f.intrinsic_s =
+                (b.mean_interval_s * f.interval_jitter).clamp(b.min_interval_s, b.max_interval_s);
         }
         self.frogs.truncate(self.s.frog_count);
         for id in self.frogs.len()..self.s.frog_count {
@@ -371,7 +432,14 @@ impl Sim {
     }
 
     pub fn step(&mut self, events: &mut Vec<CallEvent>) {
-        let Sim { s, clip_count, frogs, links, drift, step } = self;
+        let Sim {
+            s,
+            clip_count,
+            frogs,
+            links,
+            drift,
+            step,
+        } = self;
         *step += 1;
         let now = *step as f64 * DT;
         let n = frogs.len();
@@ -501,15 +569,27 @@ mod tests {
 
         let events1 = simulate(&s1, 3);
         let events2 = simulate(&s2, 3);
-        let frog0_1: Vec<f64> = events1.iter().filter(|e| e.frog_id == 0).map(|e| e.time_s).collect();
-        let frog0_2: Vec<f64> = events2.iter().filter(|e| e.frog_id == 0).map(|e| e.time_s).collect();
+        let frog0_1: Vec<f64> = events1
+            .iter()
+            .filter(|e| e.frog_id == 0)
+            .map(|e| e.time_s)
+            .collect();
+        let frog0_2: Vec<f64> = events2
+            .iter()
+            .filter(|e| e.frog_id == 0)
+            .map(|e| e.time_s)
+            .collect();
         assert_ne!(frog0_1, frog0_2);
 
         s.seed = 7;
         let events = simulate(&s, 3);
         let b = &s.behaviour;
         for frog_id in 0..s.frog_count {
-            let times: Vec<f64> = events.iter().filter(|e| e.frog_id == frog_id).map(|e| e.time_s).collect();
+            let times: Vec<f64> = events
+                .iter()
+                .filter(|e| e.frog_id == frog_id)
+                .map(|e| e.time_s)
+                .collect();
             for w in times.windows(2) {
                 let ioi = w[1] - w[0];
                 assert!(ioi >= b.min_interval_s - 2.0 * DT);
@@ -557,7 +637,11 @@ mod tests {
             s.behaviour.mode = mode;
             s.behaviour.coupling_strength = 0.0;
             let events = simulate(&s, 3);
-            assert_eq!(events, independent_events, "mode {:?} should match independent baseline at K=0", mode);
+            assert_eq!(
+                events, independent_events,
+                "mode {:?} should match independent baseline at K=0",
+                mode
+            );
         }
     }
 
@@ -567,8 +651,16 @@ mod tests {
     }
 
     fn final_pair_delta(events: &[CallEvent], mean_interval_s: f64) -> f64 {
-        let t0: Vec<f64> = events.iter().filter(|e| e.frog_id == 0).map(|e| e.time_s).collect();
-        let t1: Vec<f64> = events.iter().filter(|e| e.frog_id == 1).map(|e| e.time_s).collect();
+        let t0: Vec<f64> = events
+            .iter()
+            .filter(|e| e.frog_id == 0)
+            .map(|e| e.time_s)
+            .collect();
+        let t1: Vec<f64> = events
+            .iter()
+            .filter(|e| e.frog_id == 1)
+            .map(|e| e.time_s)
+            .collect();
         let last_t1 = *t1.last().expect("frog 1 should have called");
         let prev_t0 = t0
             .iter()

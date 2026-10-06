@@ -16,7 +16,12 @@ impl Chorus {
         let clips = synth_bonks(sr);
         let master_gain = s.audio.master_gain;
         let sim = Sim::new(s, clips.len());
-        Chorus { sim, mixer: Mixer::new(clips, master_gain), sr, events: Vec::new() }
+        Chorus {
+            sim,
+            mixer: Mixer::new(clips, master_gain),
+            sr,
+            events: Vec::new(),
+        }
     }
 
     pub fn sim(&self) -> &Sim {
@@ -32,7 +37,13 @@ impl Chorus {
     }
 
     pub fn audition(&mut self) {
-        self.mixer.push(Trigger { frame: self.mixer.frame(), clip: 1, step: 1.0, gl: 1.0, gr: 1.0 });
+        self.mixer.push(Trigger {
+            frame: self.mixer.frame(),
+            clip: 1,
+            step: 1.0,
+            gl: 1.0,
+            gr: 1.0,
+        });
     }
 
     pub fn clip(&self, i: usize) -> &[f32] {
