@@ -2,15 +2,10 @@ amends "package://github.com/jdx/hk/releases/download/v2.8.1/hk@2.8.1#/Config.pk
 import "package://github.com/jdx/hk/releases/download/v2.8.1/hk@2.8.1#/Builtins.pkl"
 
 local fast = new Mapping<String, Step> {
-    ["betterleaks"] {
-        check = "betterleaks git --pre-commit --staged --redact"
-    }
+    ["betterleaks"] = Builtins.betterleaks
     ["typos"] = Builtins.typos
     ["actionlint"] = Builtins.actionlint
-    ["zizmor"] {
-        glob = List(".github/workflows/*.yml", ".github/workflows/*.yaml")
-        check = "zizmor {{ files }}"
-    }
+    ["zizmor"] = Builtins.zizmor
     ["agnix"] {
         glob = List("AGENTS.md", "CLAUDE.md", ".claude/**")
         check = "agnix ."
