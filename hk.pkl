@@ -8,7 +8,7 @@ local fast = new Mapping<String, Step> {
     ["zizmor"] = Builtins.zizmor
     ["agnix"] {
         glob = List("AGENTS.md", "CLAUDE.md", ".claude/**")
-        check = "agnix ."
+        check = "agnix --strict ."
     }
     ["cargo-fmt"] {
         glob = List("**/*.rs", "Cargo.toml", "**/Cargo.toml")
