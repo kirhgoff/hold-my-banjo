@@ -1,3 +1,4 @@
+// Safety for every hmb_* fn: `e` comes from hmb_new and is not yet freed; returned pointers last until the next call on `e`.
 #![allow(clippy::missing_safety_doc)]
 
 use hold_my_banjo_core::mix::Bonk;
