@@ -665,8 +665,7 @@ mod tests {
         let prev_t0 = t0
             .iter()
             .copied()
-            .filter(|&t| t < last_t1)
-            .last()
+            .rfind(|&t| t < last_t1)
             .expect("frog 0 should have called before frog 1's last call");
         ((last_t1 - prev_t0) / mean_interval_s).rem_euclid(1.0)
     }
