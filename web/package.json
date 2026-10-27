@@ -11,7 +11,7 @@
     "deploy": "bun run build && wrangler deploy"
   },
   "dependencies": {
-    "astro": "^5.16.15"
+    "astro": "^7.4.1"
   },
   "devDependencies": {
     "wrangler": "^4.83.0"
