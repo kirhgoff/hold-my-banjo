@@ -1,0 +1,63 @@
+amends "package://github.com/jdx/hk/releases/download/v2.8.1/hk@2.8.1#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.8.1/hk@2.8.1#/Builtins.pkl"
+
+local fast = new Mapping<String, Step> {
+    ["betterleaks"] = Builtins.betterleaks
+    ["typos"] = Builtins.typos
+    ["actionlint"] = Builtins.actionlint
+    ["zizmor"] = Builtins.zizmor
+    ["agnix"] {
+        glob = List("AGENTS.md", "CLAUDE.md", ".claude/**")
+        check = "agnix --strict ."
+    }
+    ["cargo-fmt"] {
+        glob = List("**/*.rs", "Cargo.toml", "**/Cargo.toml")
+        check = "cargo fmt --all --check"
+        fix = "cargo fmt --all"
+    }
+}
+
+local all = (fast) {
+    ["cargo-clippy"] {
+        glob = List("**/*.rs", "Cargo.toml", "**/Cargo.toml", "Cargo.lock")
+        check = "cargo clippy --workspace --all-targets -- -D warnings"
+    }
+    ["cargo-test"] {
+        glob = List("**/*.rs", "Cargo.toml", "**/Cargo.toml", "Cargo.lock")
+        check = "cargo test --workspace"
+    }
+    ["cargo-deny"] {
+        glob = List("Cargo.toml", "**/Cargo.toml", "Cargo.lock", "deny.toml")
+        check = "cargo deny check licenses bans sources"
+    }
+    ["cargo-machete"] {
+        glob = List("Cargo.toml", "**/Cargo.toml", "**/*.rs")
+        check = "cargo machete"
+    }
+    ["web-typecheck"] {
+        glob = List("web/**/*.ts", "web/**/*.astro", "web/**/*.mjs", "web/tsconfig.json", "web/package.json")
+        check = "cd web && bunx tsc --noEmit"
+    }
+    ["web-build"] {
+        glob = List("web/**", "crates/**/*.rs", "Cargo.lock", "audio/**")
+        check = "cd web && bun run build"
+    }
+}
+
+hooks {
+    ["pre-commit"] {
+        fix = true
+        stash = "git"
+        steps = fast
+    }
+    ["pre-push"] {
+        steps = all
+    }
+    ["check"] {
+        steps = all
+    }
+    ["fix"] {
+        fix = true
+        steps = all
+    }
+}
