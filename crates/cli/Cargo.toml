@@ -6,6 +6,6 @@ license = "MIT"
 
 [dependencies]
 hold-my-banjo-core = { path = "../core" }
-cpal = "0.15.3"
+cpal = "0.18.2"
 hound = "3.5.1"
 clap = { version = "4.5.20", features = ["derive"] }
