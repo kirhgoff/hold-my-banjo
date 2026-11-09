@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hold-my-banjo.kirhgoff.me/sitemap.xml

@@ -1,14 +1,60 @@
 ---
 import '../styles/global.css';
+
+const site = 'https://hold-my-banjo.kirhgoff.me/';
+const title = 'Hold My Banjo: live banjo frog chorus simulator';
+const description =
+  'A live chorus of eastern banjo frogs (pobblebonks), synthesised in your browser. Simulates when each frog calls and mixes the bonks into spatial stereo audio.';
+const image = `${site}og.png`;
+const imageAlt = 'An eastern banjo frog sitting on moss at night';
+const author = {
+  '@type': 'Person',
+  name: 'Kirill Lastovirya',
+  url: 'https://kirhgoff.me',
+  sameAs: ['https://github.com/kirhgoff', 'https://www.linkedin.com/in/kirhgoff', 'https://x.com/kirhgoff'],
+};
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'Hold My Banjo',
+  url: site,
+  description,
+  applicationCategory: 'MultimediaApplication',
+  operatingSystem: 'Any',
+  codeRepository: 'https://github.com/kirhgoff/hold-my-banjo',
+  sameAs: ['https://github.com/kirhgoff/hold-my-banjo'],
+  author,
+  creator: author,
+};
 ---
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="A live chorus of eastern banjo frogs (pobblebonks), synthesised in your browser." />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={site} />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta name="theme-color" content="#0c1210" />
-    <title>Hold My Banjo</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Hold My Banjo" />
+    <meta property="og:url" content={site} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={image} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={imageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:creator" content="@kirhgoff" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+    <meta name="twitter:image:alt" content={imageAlt} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,400&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -168,6 +214,7 @@ import '../styles/global.css';
     <footer>
       <a href="https://github.com/kirhgoff/hold-my-banjo">Source on GitHub</a>
       <span>Rust · WebAssembly · AudioWorklet</span>
+      <span>Made by <a href="https://kirhgoff.me">Kirill Lastovirya</a></span>
       <a href="https://commons.wikimedia.org/wiki/File:Eastern_Banjo_Frog_(Limnodynastes_dumerili)_(8398132352).jpg">Photo: Matt from Melbourne, CC BY 2.0</a>
     </footer>
 

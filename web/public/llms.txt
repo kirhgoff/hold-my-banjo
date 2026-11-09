@@ -1,0 +1,12 @@
+# Hold My Banjo
+
+> A chorus simulator for the eastern banjo frog (pobblebonk, Limnodynastes dumerilii). It places frogs in a 2D scene, simulates when each one calls, and mixes the "bonk" calls into stereo audio panned and attenuated by position. The same Rust simulation runs live in the browser via WebAssembly and an AudioWorklet.
+
+## Key pages
+
+- [Live simulator](https://hold-my-banjo.kirhgoff.me/): play the chorus, change frog count, seed, behaviour mode and the shape of the bonk.
+
+## Links
+
+- [Source code](https://github.com/kirhgoff/hold-my-banjo)
+- [Author](https://kirhgoff.me)
